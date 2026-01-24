@@ -1,16 +1,13 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  nativeBuildInputs = with pkgs; [
-    pkg-config
+  buildInputs = with pkgs; [
+    apkg-config
     gobject-introspection
     cargo
     rustc
     cowsay
     bun
-  ];
-
-  buildInputs = with pkgs; [
     azure-functions-core-tools
     azure-cli
     at-spi2-atk
