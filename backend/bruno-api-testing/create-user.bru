@@ -1,0 +1,29 @@
+meta {
+  name: create-user
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:7071/api/users
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username" : "neymar",
+    "email" : "neymar@neymar.com",
+    "fullName" : "neymar",
+    "age" : 3,
+    "searchLocation" : "Guelph",
+    "mode" : "looking",
+    "profilePicture" : "url-to-pfp",
+    "bio" : "bio"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

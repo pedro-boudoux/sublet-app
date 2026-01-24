@@ -1,0 +1,22 @@
+meta {
+  name: update-user
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://localhost:7071/api/users/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "bio": "New bio for pedro"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

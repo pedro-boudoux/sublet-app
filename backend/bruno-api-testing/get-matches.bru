@@ -1,0 +1,48 @@
+meta {
+  name: get-matches
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:7071/api/matches?userId=f38c44b6-cc20-4649-b8df-9a7bf6b10871
+  body: none
+  auth: inherit
+}
+
+params:query {
+  userId: f38c44b6-cc20-4649-b8df-9a7bf6b10871
+}
+
+docs {
+  # Get Matches
+  
+  Retrieves all matches for a given user, enriched with matched user's profile.
+  
+  ## Query Parameters
+  - `userId` (required) - Current user's ID
+  
+  ## Response
+  ```json
+  {
+    "matches": [
+      {
+        "matchId": "uuid",
+        "matchedAt": "2026-01-24T12:00:00.000Z",
+        "matchedUser": {
+          "id": "uuid",
+          "username": "jane_doe",
+          "fullName": "Jane Doe",
+          "profilePicture": "url",
+          "searchLocation": "Guelph"
+        }
+      }
+    ],
+    "count": 1
+  }
+  ```
+}
+
+settings {
+  encodeUrl: true
+}

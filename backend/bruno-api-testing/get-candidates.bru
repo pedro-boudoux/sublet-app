@@ -1,0 +1,51 @@
+meta {
+  name: get-candidates
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:7071/api/candidates?userId=f38c44b6-cc20-4649-b8df-9a7bf6b10871&location=Guelph&limit=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  userId: f38c44b6-cc20-4649-b8df-9a7bf6b10871
+  location: Guelph
+  limit: 20
+}
+
+vars:pre-request {
+  userId: 9039a1f1-5a24-4ced-8db2-464af0602cbd
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Get Candidates
+  
+  Fetches candidate users for the discovery feed.
+  Returns users with the opposite mode who haven't been swiped on yet.
+  
+  ## Query Parameters
+  - `userId` (required) - Current user's ID
+  - `location` (optional) - Filter by searchLocation  
+  - `limit` (optional) - Max candidates to return (default: 20, max: 50)
+  
+  ## Response
+  ```json
+  {
+    "candidates": [...],
+    "count": 5,
+    "filters": {
+      "targetMode": "offering",
+      "location": null,
+      "limit": 20
+    }
+  }
+  ```
+}
