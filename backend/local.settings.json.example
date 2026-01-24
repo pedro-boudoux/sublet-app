@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "COSMOS_CONNECTION_STRING": "",
+    "BLOB_CONNECTION_STRING": ""
+  }
+}
