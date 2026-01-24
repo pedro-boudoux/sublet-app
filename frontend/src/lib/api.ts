@@ -116,7 +116,8 @@ export interface UpdateListingRequest {
 // Swipe Types
 export interface SwipeRequest {
   swiperId: string;
-  swipedUserId: string;
+  swipedId: string;  // User ID or Listing ID
+  swipedType: 'user' | 'listing';
   direction: 'like' | 'pass';
 }
 
@@ -143,10 +144,10 @@ export interface Match {
 
 // Response Types
 export interface CandidatesResponse {
-  candidates: ApiUser[];
+  candidates: (ApiUser | ApiListing)[];  // Users or Listings depending on mode
+  type: 'users' | 'listings';
   count: number;
   filters: {
-    targetMode: string;
     location: string | null;
     limit: number;
   };

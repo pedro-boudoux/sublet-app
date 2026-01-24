@@ -1,9 +1,10 @@
 import useSWR from 'swr';
-import { getCandidates, type ApiUser, type CandidatesResponse } from '../lib/api';
+import { getCandidates, type ApiUser, type ApiListing, type CandidatesResponse } from '../lib/api';
 import { useStore } from '../stores/useStore';
 
 interface UseCandidatesResult {
-  candidates: ApiUser[];
+  candidates: (ApiUser | ApiListing)[];
+  candidateType: 'users' | 'listings' | null;
   isLoading: boolean;
   isError: boolean;
   error: Error | undefined;
@@ -12,7 +13,7 @@ interface UseCandidatesResult {
 
 /**
  * Hook to fetch candidates for swiping
- * Requires a logged-in user
+ * Returns listings for "looking" users, users for "offering" users
  */
 export function useCandidates(): UseCandidatesResult {
   const user = useStore((state) => state.user);
@@ -30,6 +31,7 @@ export function useCandidates(): UseCandidatesResult {
 
   return {
     candidates: data?.candidates || [],
+    candidateType: data?.type || null,
     isLoading,
     isError: !!error,
     error,

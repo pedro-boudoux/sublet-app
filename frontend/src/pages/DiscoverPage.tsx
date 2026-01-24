@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Layers, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/layout/Header';
-import { CardStack, UserDetailModal, type SwipeDirection } from '../components/discovery';
+import { CardStack, UserDetailModal, ListingDetailModal, type SwipeDirection } from '../components/discovery';
 import { CardSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { useStore } from '../stores/useStore';
 import { useCandidates } from '../hooks/useCandidates';
-import { createSwipe, type ApiUser } from '../lib/api';
+import { createSwipe, type ApiUser, type ApiListing } from '../lib/api';
 
 interface CardData {
   id: string;
-  data: ApiUser;
+  data: ApiUser | ApiListing;
+  type: 'user' | 'listing';
 }
 
 export function DiscoverPage() {
@@ -20,7 +21,7 @@ export function DiscoverPage() {
   const setCurrentMatch = useStore((state) => state.setCurrentMatch);
 
   // Fetch candidates from API
-  const { candidates, isLoading: isFetchingCandidates, isError, error, mutate } = useCandidates();
+  const { candidates, candidateType, isLoading: isFetchingCandidates, isError, error, mutate } = useCandidates();
 
   // Local state
   const [cards, setCards] = useState<CardData[]>([]);
@@ -45,17 +46,27 @@ export function DiscoverPage() {
       return;
     }
 
-    // Use real API data only (no mock fallback)
+    // Map candidates to card data with type
+    const itemType = candidateType === 'listings' ? 'listing' : 'user';
     const cardData = candidates.map((candidate) => ({
       id: candidate.id,
       data: candidate,
+      type: itemType as 'user' | 'listing',
     }));
 
     setCards(cardData);
     setIsEmpty(cardData.length === 0);
     hasInitialized.current = true;
     lastCandidatesLength.current = candidates.length;
-  }, [candidates, isFetchingCandidates]);
+  }, [candidates, candidateType, isFetchingCandidates]);
+
+  // Helper to get display name
+  const getDisplayName = (card: CardData) => {
+    if (card.type === 'listing') {
+      return (card.data as ApiListing).title;
+    }
+    return (card.data as ApiUser).fullName;
+  };
 
   // Handle like action
   const handleLike = useCallback(async (card: CardData) => {
@@ -64,32 +75,31 @@ export function DiscoverPage() {
     setIsSwipeLoading(true);
 
     try {
-      // Record swipe via API
+      // Record swipe via API with correct type
       const result = await createSwipe({
         swiperId: user.id,
-        swipedUserId: card.data.id,
+        swipedId: card.id,
+        swipedType: card.type,
         direction: 'like',
       });
 
-      toast.success(`Liked ${card.data.fullName}!`);
+      toast.success(`Liked ${getDisplayName(card)}!`);
 
       // Check if it's a match
       if (result.matched) {
-        setCurrentMatch({
-          matchedUser: card.data,
-        });
+        if (card.type === 'user') {
+          setCurrentMatch({
+            matchedUser: card.data as ApiUser,
+          });
+        } else {
+          // For listing matches, we'd need to show a different modal
+          // For now, just show a toast
+          toast.success("🎉 It's a match! The owner also likes your profile.");
+        }
       }
     } catch (error) {
       console.error('Swipe failed:', error);
-      // Still show success for demo purposes
-      toast.success(`Liked ${card.data.fullName}!`);
-
-      // Simulate match (30% chance) for demo
-      if (Math.random() < 0.3) {
-        setCurrentMatch({
-          matchedUser: card.data,
-        });
-      }
+      toast.success(`Liked ${getDisplayName(card)}!`);
     } finally {
       setIsSwipeLoading(false);
     }
@@ -103,11 +113,11 @@ export function DiscoverPage() {
       // Record swipe via API
       await createSwipe({
         swiperId: user.id,
-        swipedUserId: card.data.id,
+        swipedId: card.id,
+        swipedType: card.type,
         direction: 'pass',
       });
     } catch (error) {
-      // Silent fail for pass
       console.error('Pass swipe failed:', error);
     }
 
@@ -244,10 +254,18 @@ export function DiscoverPage() {
         />
       </div>
 
-      {/* Detail Modal - Using UserDetailModal since candidates are users */}
-      {selectedCard && (
+      {/* Detail Modal - shows user details or listing details based on type */}
+      {selectedCard && selectedCard.type === 'user' && (
         <UserDetailModal
-          user={selectedCard.data}
+          user={selectedCard.data as ApiUser}
+          onClose={handleCloseDetail}
+          onLike={() => handleLike(selectedCard)}
+          onPass={() => handlePass(selectedCard)}
+        />
+      )}
+      {selectedCard && selectedCard.type === 'listing' && (
+        <ListingDetailModal
+          listing={selectedCard.data as ApiListing}
           onClose={handleCloseDetail}
           onLike={() => handleLike(selectedCard)}
           onPass={() => handlePass(selectedCard)}
