@@ -1,0 +1,53 @@
+meta {
+  name: create-swipe
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:7071/api/swipes
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "swiperId": "f38c44b6-cc20-4649-b8df-9a7bf6b10871",
+    "swipedUserId": "5f88df61-9d62-4738-a422-d3578170f2ed",
+    "direction": "like"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Create Swipe
+  
+  Records a swipe action and creates a match if mutual like is detected.
+  
+  ## Body Parameters
+  - `swiperId` (required) - ID of the user performing the swipe
+  - `swipedUserId` (required) - ID of the user being swiped on
+  - `direction` (required) - "like" | "pass" | "superlike"
+  
+  ## Response
+  ```json
+  {
+    "swipeId": "uuid",
+    "matched": false,
+    "matchId": null
+  }
+  ```
+  
+  If mutual like detected:
+  ```json
+  {
+    "swipeId": "uuid",
+    "matched": true,
+    "matchId": "uuid"
+  }
+  ```
+}

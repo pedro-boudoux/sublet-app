@@ -1,0 +1,55 @@
+meta {
+  name: get-match
+  type: http
+  seq: 8
+}
+
+get {
+  url: http://localhost:7071/api/matches/your-match-id-here
+  body: none
+  auth: inherit
+}
+
+docs {
+  # Get Match
+  
+  Retrieves a specific match by ID with both users' full profile details.
+  
+  ## Path Parameters
+  - `matchId` (required) - The unique match ID in the URL path
+  
+  ## Example URL
+  ```
+  GET /api/matches/abc123-def456-ghi789
+  ```
+  
+  ## Response
+  ```json
+  {
+    "matchId": "uuid",
+    "matchedAt": "2026-01-24T12:00:00.000Z",
+    "users": [
+      {
+        "id": "uuid",
+        "username": "user1",
+        "fullName": "User One",
+        "profilePicture": "url",
+        "bio": "About me text",
+        "searchLocation": "Guelph",
+        "mode": "looking",
+        "lifestyleTags": ["Non-Smoker", "Pet Friendly"]
+      },
+      {
+        "id": "uuid",
+        "username": "user2",
+        "fullName": "User Two",
+        ...
+      }
+    ]
+  }
+  ```
+}
+
+settings {
+  encodeUrl: true
+}
