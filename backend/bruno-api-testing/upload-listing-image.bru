@@ -1,0 +1,52 @@
+meta {
+  name: upload-listing-image
+  type: http
+  seq: 14
+}
+
+post {
+  url: http://localhost:7071/api/upload/listing
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "listingId": "eb17f709-629b-4bd0-a07f-2dba90563d36",
+    "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "mimeType": "image/png"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Upload Listing Image
+  
+  Uploads an image for a listing and adds it to the listing's images array.
+  
+  ## Body Parameters
+  - `listingId` (required) - ID of the listing to add image to
+  - `image` (required) - Base64 encoded image data
+  - `mimeType` (required) - "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+  
+  ## Response
+  ```json
+  {
+    "url": "https://storage.blob.core.windows.net/listings/listing-id/uuid.png",
+    "blobName": "listing-id/uuid.png",
+    "size": 12345,
+    "mimeType": "image/png",
+    "listingId": "listing-id",
+    "totalImages": 3
+  }
+  ```
+  
+  ## Notes
+  - Max file size: 10MB
+  - Images are stored in a folder named after the listingId
+  - The URL is automatically added to the listing's `images` array
+}
