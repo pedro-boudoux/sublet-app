@@ -6,7 +6,7 @@ import { Header } from '../components/layout/Header';
 import { CardStack, UserDetailModal, type SwipeDirection } from '../components/discovery';
 import { CardSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { useStore } from '../stores/useStore';
-import { useCandidates, MOCK_LISTINGS } from '../hooks/useCandidates';
+import { useCandidates } from '../hooks/useCandidates';
 import { createSwipe, type ApiUser } from '../lib/api';
 
 interface CardData {
@@ -18,51 +18,51 @@ export function DiscoverPage() {
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
   const setCurrentMatch = useStore((state) => state.setCurrentMatch);
-  
+
   // Fetch candidates from API
   const { candidates, isLoading: isFetchingCandidates, isError, error, mutate } = useCandidates();
-  
+
   // Local state
   const [cards, setCards] = useState<CardData[]>([]);
   const [isEmpty, setIsEmpty] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [isSwipeLoading, setIsSwipeLoading] = useState(false);
-  
+
   // Track if we've initialized cards to prevent infinite loops
   const hasInitialized = useRef(false);
   const lastCandidatesLength = useRef(-1);
-  
-  // Use mock data if API returns empty (for demo)
+
+  // Initialize cards from API candidates
   useEffect(() => {
     // Only update if loading finished and candidates changed
     if (isFetchingCandidates) {
       hasInitialized.current = false;
       return;
     }
-    
+
     // Check if candidates actually changed
     if (hasInitialized.current && lastCandidatesLength.current === candidates.length) {
       return;
     }
-    
-    const candidatesData = candidates.length > 0 ? candidates : MOCK_LISTINGS;
-    const cardData = candidatesData.map((candidate) => ({
+
+    // Use real API data only (no mock fallback)
+    const cardData = candidates.map((candidate) => ({
       id: candidate.id,
       data: candidate,
     }));
-    
+
     setCards(cardData);
     setIsEmpty(cardData.length === 0);
     hasInitialized.current = true;
     lastCandidatesLength.current = candidates.length;
   }, [candidates, isFetchingCandidates]);
-  
+
   // Handle like action
   const handleLike = useCallback(async (card: CardData) => {
     if (!user || isSwipeLoading) return;
-    
+
     setIsSwipeLoading(true);
-    
+
     try {
       // Record swipe via API
       const result = await createSwipe({
@@ -70,9 +70,9 @@ export function DiscoverPage() {
         swipedUserId: card.data.id,
         direction: 'like',
       });
-      
+
       toast.success(`Liked ${card.data.fullName}!`);
-      
+
       // Check if it's a match
       if (result.matched) {
         setCurrentMatch({
@@ -83,7 +83,7 @@ export function DiscoverPage() {
       console.error('Swipe failed:', error);
       // Still show success for demo purposes
       toast.success(`Liked ${card.data.fullName}!`);
-      
+
       // Simulate match (30% chance) for demo
       if (Math.random() < 0.3) {
         setCurrentMatch({
@@ -94,11 +94,11 @@ export function DiscoverPage() {
       setIsSwipeLoading(false);
     }
   }, [user, isSwipeLoading, setCurrentMatch]);
-  
+
   // Handle pass action
   const handlePass = useCallback(async (card: CardData) => {
     if (!user || isSwipeLoading) return;
-    
+
     try {
       // Record swipe via API
       await createSwipe({
@@ -110,10 +110,10 @@ export function DiscoverPage() {
       // Silent fail for pass
       console.error('Pass swipe failed:', error);
     }
-    
+
     toast('Passed', { icon: '👋' });
   }, [user, isSwipeLoading]);
-  
+
   const handleSwipe = useCallback((_id: string, direction: SwipeDirection, card: CardData) => {
     if (direction === 'right') {
       handleLike(card);
@@ -121,25 +121,25 @@ export function DiscoverPage() {
       handlePass(card);
     }
   }, [handleLike, handlePass]);
-  
+
   const handleEmpty = useCallback(() => {
     setIsEmpty(true);
   }, []);
-  
+
   const handleCardTap = useCallback((card: CardData) => {
     setSelectedCard(card);
   }, []);
-  
+
   const handleCloseDetail = useCallback(() => {
     setSelectedCard(null);
   }, []);
-  
+
   const handleRefresh = useCallback(() => {
     hasInitialized.current = false;
     lastCandidatesLength.current = -1;
     mutate();
   }, [mutate]);
-  
+
   // If no user profile, prompt to create one
   if (!user) {
     return (
@@ -158,7 +158,7 @@ export function DiscoverPage() {
       </div>
     );
   }
-  
+
   // Loading state
   if (isFetchingCandidates) {
     return (
@@ -184,7 +184,7 @@ export function DiscoverPage() {
       </div>
     );
   }
-  
+
   // Error state
   if (isError) {
     return (
@@ -199,7 +199,7 @@ export function DiscoverPage() {
       </div>
     );
   }
-  
+
   // Empty state
   if (isEmpty || cards.length === 0) {
     return (
@@ -222,10 +222,10 @@ export function DiscoverPage() {
   return (
     <div className="flex flex-col h-full">
       <Header />
-      
+
       {/* Refresh hint */}
       <div className="flex justify-center py-1">
-        <button 
+        <button
           onClick={handleRefresh}
           className="flex items-center gap-1 text-xs text-white/40 hover:text-white/60 transition-colors"
         >
@@ -233,7 +233,7 @@ export function DiscoverPage() {
           <span>Refresh</span>
         </button>
       </div>
-      
+
       {/* Card Stack */}
       <div className="flex-1 overflow-hidden">
         <CardStack
@@ -243,7 +243,7 @@ export function DiscoverPage() {
           onCardTap={handleCardTap}
         />
       </div>
-      
+
       {/* Detail Modal - Using UserDetailModal since candidates are users */}
       {selectedCard && (
         <UserDetailModal

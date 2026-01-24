@@ -7,26 +7,58 @@
           "clientIdSettingName": "AZURE_CLIENT_ID",
           "clientSecretSettingName": "AZURE_CLIENT_SECRET"
         }
+      },
+      "github": {
+        "registration": {
+          "clientIdSettingName": "GITHUB_CLIENT_ID",
+          "clientSecretSettingName": "GITHUB_CLIENT_SECRET"
+        }
       }
     }
   },
   "routes": [
     {
-      "route": "/api/*",
-      "allowedRoles": ["authenticated"] 
+      "route": "/login",
+      "allowedRoles": [
+        "anonymous",
+        "authenticated"
+      ]
     },
     {
-      "route": "/login",
-      "rewrite": "/.auth/login/github" 
+      "route": "/.auth/login/*",
+      "allowedRoles": [
+        "anonymous",
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/.auth/me",
+      "allowedRoles": [
+        "anonymous",
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": [
+        "authenticated"
+      ]
     },
     {
       "route": "/logout",
-      "rewrite": "/.auth/logout"
+      "redirect": "/.auth/logout"
     }
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/.auth/login/github"
+      "redirect": "/login"
     }
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",
+      "/.auth/*"
+    ]
   }
 }

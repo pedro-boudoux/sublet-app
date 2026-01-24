@@ -46,6 +46,7 @@ export interface ApiUser {
 }
 
 export interface CreateUserRequest {
+  identityId: string;  // Azure SWA identity ID
   username: string;
   email: string;
   fullName: string;
@@ -160,7 +161,7 @@ export interface MatchesResponse {
 
 export class ApiError extends Error {
   status: number;
-  
+
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
@@ -175,7 +176,7 @@ async function fetchApi<T>(
   options?: RequestInit
 ): Promise<T> {
   let response: Response;
-  
+
   try {
     response = await fetch(`${API_BASE}${endpoint}`, {
       headers: {
@@ -262,7 +263,7 @@ export async function getCandidates(
   const params = new URLSearchParams({ userId });
   if (options?.location) params.append('location', options.location);
   if (options?.limit) params.append('limit', options.limit.toString());
-  
+
   return fetchApi<CandidatesResponse>(`/candidates?${params}`);
 }
 

@@ -9,6 +9,7 @@ const container = database.container("users");
 
 // User interface
 interface CreateUserRequest {
+    identityId: string;   // Azure SWA identity ID (required)
     username: string;
     email: string;
     fullName: string;
@@ -22,6 +23,7 @@ interface CreateUserRequest {
 
 interface User extends CreateUserRequest {
     id: string;
+    identityId: string;   // Azure SWA identity ID
     isVerified: boolean;
     createdAt: string;
     updatedAt: string;
@@ -53,7 +55,7 @@ export async function createUser(request: HttpRequest, context: InvocationContex
         const body = await request.json() as CreateUserRequest;
 
         // Validate required fields
-        const requiredFields = ["username", "email", "fullName", "age", "searchLocation", "mode"] as const;
+        const requiredFields = ["identityId", "username", "email", "fullName", "age", "searchLocation", "mode"] as const;
         const missingFields = requiredFields.filter(field => !body[field]);
 
         if (missingFields.length > 0) {
@@ -80,6 +82,7 @@ export async function createUser(request: HttpRequest, context: InvocationContex
         const now = new Date().toISOString();
         const newUser: User = {
             id: uuidv4(),
+            identityId: body.identityId,
             username: body.username,
             email: body.email,
             fullName: body.fullName,

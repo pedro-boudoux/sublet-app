@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { ProfileHeader, AboutSection, LifestyleSection, SocialSection } from '../components/profile';
+import { useAuthContext } from '../components/auth';
 import { useStore } from '../stores/useStore';
 import { updateUser, ApiError } from '../lib/api';
 import { LIFESTYLE_TAGS } from '../types';
@@ -17,14 +18,15 @@ const modeOptions = [
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const { logout } = useAuthContext();
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
   const clearUser = useStore((state) => state.clearUser);
-  
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Editable fields
   const [editFullName, setEditFullName] = useState(user?.fullName || '');
   const [editAge, setEditAge] = useState(user?.age?.toString() || '');
@@ -32,7 +34,7 @@ export function ProfilePage() {
   const [editBio, setEditBio] = useState(user?.bio || '');
   const [editTags, setEditTags] = useState<string[]>(user?.lifestyleTags || []);
   const [editMode, setEditMode] = useState<'looking' | 'offering'>(user?.mode || 'looking');
-  
+
   // If no user, redirect to onboarding
   if (!user) {
     return (
@@ -45,7 +47,7 @@ export function ProfilePage() {
           <h2 className="text-white text-lg font-semibold tracking-wide">Profile</h2>
           <div className="w-10" />
         </div>
-        
+
         {/* No Profile State */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
           <div className="text-center text-white/60">
@@ -59,7 +61,7 @@ export function ProfilePage() {
       </div>
     );
   }
-  
+
   const startEditing = () => {
     setEditFullName(user.fullName);
     setEditAge(user.age?.toString() || '');
@@ -69,20 +71,20 @@ export function ProfilePage() {
     setEditMode(user.mode);
     setIsEditing(true);
   };
-  
+
   const cancelEditing = () => {
     setIsEditing(false);
   };
-  
+
   const toggleTag = (tag: string) => {
     setEditTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
-  
+
   const handleSave = async () => {
     setIsSaving(true);
-    
+
     try {
       const updatedUser = await updateUser(user.id, {
         fullName: editFullName,
@@ -92,7 +94,7 @@ export function ProfilePage() {
         lifestyleTags: editTags,
         mode: editMode,
       });
-      
+
       setUser(updatedUser);
       setIsEditing(false);
       toast.success('Profile updated!');
@@ -107,7 +109,7 @@ export function ProfilePage() {
       setIsSaving(false);
     }
   };
-  
+
   const handleModeChange = async (newMode: string) => {
     if (isEditing) {
       setEditMode(newMode as 'looking' | 'offering');
@@ -125,10 +127,10 @@ export function ProfilePage() {
       }
     }
   };
-  
+
   const handleLogout = () => {
     clearUser();
-    navigate('/onboarding');
+    logout();  // This redirects to SWA logout endpoint
   };
 
   return (
@@ -149,7 +151,7 @@ export function ProfilePage() {
           </Button>
         )}
       </div>
-      
+
       {/* Scrollable Content */}
       <div className="flex flex-col gap-6 px-4 pt-2 pb-8">
         {/* Profile Header */}
@@ -165,7 +167,7 @@ export function ProfilePage() {
                 </div>
               )}
             </div>
-            
+
             {/* Editable Fields */}
             <div className="w-full space-y-4">
               <div>
@@ -177,7 +179,7 @@ export function ProfilePage() {
                   className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-slate-300 mb-1">Age</label>
@@ -209,14 +211,14 @@ export function ProfilePage() {
             isVerified={user.isVerified}
           />
         )}
-        
+
         {/* Mode Toggle */}
         <Toggle
           options={modeOptions}
           value={isEditing ? editMode : user.mode}
           onChange={handleModeChange}
         />
-        
+
         {/* About Me */}
         {isEditing ? (
           <div className="acrylic-panel rounded-xl p-4 space-y-2">
@@ -232,7 +234,7 @@ export function ProfilePage() {
         ) : (
           <AboutSection bio={user.bio} />
         )}
-        
+
         {/* Lifestyle & Habits */}
         {isEditing ? (
           <div className="space-y-3">
@@ -252,7 +254,7 @@ export function ProfilePage() {
         ) : (
           <LifestyleSection tags={user.lifestyleTags} />
         )}
-        
+
         {/* Social Verification (non-editable) */}
         {!isEditing && (
           <SocialSection
@@ -260,10 +262,10 @@ export function ProfilePage() {
             socialLinks={undefined}
           />
         )}
-        
+
         {/* Save / Logout Buttons */}
         {isEditing ? (
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={isSaving}
             className="mt-4"
@@ -281,8 +283,8 @@ export function ProfilePage() {
             )}
           </Button>
         ) : (
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={handleLogout}
             className="mt-4"
           >
