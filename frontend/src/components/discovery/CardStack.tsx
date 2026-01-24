@@ -1,17 +1,16 @@
 import { useState, useRef, useCallback } from 'react';
 import { SwipeCard, type SwipeDirection } from './SwipeCard';
 import { ActionButtons } from './ActionButtons';
-import type { Listing, User } from '../../types';
+import type { ApiUser } from '../../lib/api';
 
 interface CardData {
   id: string;
-  type: 'listing' | 'user';
-  data: Listing | User;
+  data: ApiUser;
 }
 
 interface CardStackProps {
   cards: CardData[];
-  onSwipe: (id: string, direction: SwipeDirection, data: CardData) => void;
+  onSwipe: (id: string, direction: SwipeDirection, card: CardData) => void;
   onEmpty?: () => void;
   onCardTap?: (card: CardData) => void;
 }
@@ -20,7 +19,6 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
   const [currentIndex, setCurrentIndex] = useState(cards.length - 1);
   const currentIndexRef = useRef(currentIndex);
   
-  // Track which cards have left the screen
   const childRefs = useRef<Map<string, any>>(new Map());
   
   const updateCurrentIndex = useCallback((val: number) => {
@@ -30,12 +28,11 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
   
   const canSwipe = currentIndex >= 0;
   
-  const handleSwipe = useCallback((cardId: string, direction: SwipeDirection, data: CardData) => {
-    onSwipe(cardId, direction, data);
+  const handleSwipe = useCallback((cardId: string, direction: SwipeDirection, card: CardData) => {
+    onSwipe(cardId, direction, card);
   }, [onSwipe]);
   
   const handleCardLeftScreen = useCallback((cardIndex: number) => {
-    // When card leaves screen, move to next card
     if (cardIndex === currentIndexRef.current) {
       const newIndex = currentIndexRef.current - 1;
       updateCurrentIndex(newIndex);
@@ -56,14 +53,11 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
     }
   }, [canSwipe, currentIndex, cards]);
   
-  // Calculate visible cards (show max 3 for performance)
   const visibleCards = cards.slice(Math.max(0, currentIndex - 2), currentIndex + 1);
   
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Card Stack Area */}
       <div className="flex-1 relative w-full px-4 py-2">
-        {/* Background cards for depth effect */}
         {currentIndex > 1 && (
           <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[85%] h-[calc(100%-80px)] bg-gray-800/40 rounded-2xl border border-white/5 card-stack-1 z-10" />
         )}
@@ -71,7 +65,6 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
           <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] h-[calc(100%-80px)] bg-gray-700/60 rounded-2xl border border-white/5 card-stack-2 z-20" />
         )}
         
-        {/* Active Cards */}
         <div className="relative w-full h-[calc(100%-80px)] z-30">
           {visibleCards.map((card) => {
             const cardIndex = cards.indexOf(card);
@@ -83,7 +76,6 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
                   if (el) childRefs.current.set(card.id, el);
                 }}
                 data={card.data}
-                type={card.type}
                 onSwipe={(dir) => handleSwipe(card.id, dir, card)}
                 onCardLeftScreen={() => handleCardLeftScreen(cardIndex)}
                 onTap={isTop && onCardTap ? () => onCardTap(card) : undefined}
@@ -94,7 +86,6 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
           })}
         </div>
         
-        {/* Empty State */}
         {!canSwipe && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white/60">
@@ -105,7 +96,6 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
         )}
       </div>
       
-      {/* Action Buttons */}
       <div className="relative z-50 pb-4">
         <ActionButtons
           onPass={() => swipe('left')}

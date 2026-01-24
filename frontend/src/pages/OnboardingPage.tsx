@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Camera, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Check, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { Card, CardContent } from '../components/ui/Card';
 import { useStore } from '../stores/useStore';
+import { createUser, type CreateUserRequest, ApiError } from '../lib/api';
 import { LIFESTYLE_TAGS } from '../types';
 import { cn } from '../lib/utils';
 
@@ -32,6 +34,7 @@ export function OnboardingPage() {
   const [bio, setBio] = useState(user?.bio || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(user?.lifestyleTags || []);
   const [profilePicture, setProfilePicture] = useState(user?.profilePicture || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -57,27 +60,46 @@ export function OnboardingPage() {
     }
   };
   
-  const handleComplete = () => {
-    // Create/update user
-    const newUser = {
-      id: user?.id || crypto.randomUUID(),
-      username: fullName.toLowerCase().replace(/\s+/g, '_'),
-      email: user?.email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-      fullName,
-      age: parseInt(age) || 25,
-      searchLocation: location,
-      mode,
-      profilePicture,
-      bio,
-      lifestyleTags: selectedTags,
-      isVerified: false,
-      createdAt: user?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const handleComplete = async () => {
+    setIsSubmitting(true);
     
-    setUser(newUser);
-    setIsOnboarded(true);
-    navigate('/');
+    try {
+      // Generate username from full name
+      const username = fullName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString(36);
+      
+      // Create user via API
+      const userData: CreateUserRequest = {
+        username,
+        email: `${username}@subletconnect.app`, // Placeholder email
+        fullName,
+        age: parseInt(age) || 25,
+        searchLocation: location,
+        mode,
+        profilePicture,
+        bio,
+        lifestyleTags: selectedTags,
+      };
+      
+      const createdUser = await createUser(userData);
+      
+      // Store user in state
+      setUser(createdUser);
+      setIsOnboarded(true);
+      
+      toast.success('Profile created successfully!');
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to create profile. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const canProceed = () => {
@@ -138,8 +160,8 @@ export function OnboardingPage() {
               <CardContent>
                 <p className="text-slate-300 text-sm leading-relaxed">
                   {mode === 'looking'
-                    ? "You'll see available sublets and can swipe to show interest. Landlords will review your profile."
-                    : "You'll create listings for your place and review interested tenants who swipe on your listing."}
+                    ? "You'll see people offering sublets and can swipe to show interest. They'll review your profile if interested."
+                    : "You'll see people looking for sublets and can swipe to show interest. They'll see your profile if you match."}
                 </p>
               </CardContent>
             </Card>
@@ -271,10 +293,21 @@ export function OnboardingPage() {
       </div>
       
       {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-dark via-background-dark to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0f1a23] via-[#0f1a23] to-transparent">
         {step === 'complete' ? (
-          <Button className="w-full" onClick={handleComplete}>
-            Start Swiping
+          <Button 
+            className="w-full" 
+            onClick={handleComplete}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Creating Profile...</span>
+              </>
+            ) : (
+              'Start Swiping'
+            )}
           </Button>
         ) : (
           <Button

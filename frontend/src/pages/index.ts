@@ -3,3 +3,4 @@ export { ProfilePage } from './ProfilePage';
 export { SavedPage } from './SavedPage';
 export { InboxPage } from './InboxPage';
 export { OnboardingPage } from './OnboardingPage';
+export { CreateListingPage } from './CreateListingPage';

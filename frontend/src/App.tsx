@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppShell } from './components/layout/AppShell';
 import { MatchOverlay } from './components/match';
-import { DiscoverPage, ProfilePage, SavedPage, InboxPage, OnboardingPage } from './pages';
+import { DiscoverPage, ProfilePage, SavedPage, InboxPage, OnboardingPage, CreateListingPage } from './pages';
 import './App.css';
 
 function App() {
@@ -35,6 +35,9 @@ function App() {
       <Routes>
         {/* Onboarding (no bottom nav) */}
         <Route path="/onboarding" element={<OnboardingPage />} />
+        
+        {/* Create Listing (no bottom nav) */}
+        <Route path="/listings/create" element={<CreateListingPage />} />
         
         {/* Main App with Bottom Nav */}
         <Route element={<AppShell />}>
