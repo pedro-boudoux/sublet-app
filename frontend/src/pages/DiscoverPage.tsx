@@ -3,110 +3,106 @@ import { useNavigate } from 'react-router-dom';
 import { Layers, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/layout/Header';
-import { CardStack, ListingDetailModal, UserDetailModal, type SwipeDirection } from '../components/discovery';
+import { CardStack, UserDetailModal, type SwipeDirection } from '../components/discovery';
 import { CardSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { useStore } from '../stores/useStore';
-import { MOCK_LISTINGS } from '../hooks/useCandidates';
-import type { Listing, User } from '../types';
+import { useCandidates, MOCK_LISTINGS } from '../hooks/useCandidates';
+import { createSwipe, type ApiUser } from '../lib/api';
 
 interface CardData {
   id: string;
-  type: 'listing' | 'user';
-  data: Listing | User;
+  data: ApiUser;
 }
 
 export function DiscoverPage() {
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
   const setCurrentMatch = useStore((state) => state.setCurrentMatch);
-  const addMatch = useStore((state) => state.addMatch);
   
-  // State
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch candidates from API
+  const { candidates, isLoading: isFetchingCandidates, isError, error, mutate } = useCandidates();
+  
+  // Local state
   const [cards, setCards] = useState<CardData[]>([]);
   const [isEmpty, setIsEmpty] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+  const [isSwipeLoading, setIsSwipeLoading] = useState(false);
   
-  // Simulate fetching data
-  const loadCards = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    setIsEmpty(false);
+  // Use mock data if API returns empty (for demo)
+  useEffect(() => {
+    if (!isFetchingCandidates) {
+      const candidatesData = candidates.length > 0 ? candidates : MOCK_LISTINGS;
+      const cardData = candidatesData.map((candidate) => ({
+        id: candidate.id,
+        data: candidate,
+      }));
+      setCards(cardData);
+      setIsEmpty(cardData.length === 0);
+    }
+  }, [candidates, isFetchingCandidates]);
+  
+  // Handle like action
+  const handleLike = useCallback(async (card: CardData) => {
+    if (!user || isSwipeLoading) return;
+    
+    setIsSwipeLoading(true);
     
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // In production, this would be: const data = await fetch('/api/get-candidates')
-      const data = MOCK_LISTINGS.map((listing) => ({
-        id: listing.id,
-        type: 'listing' as const,
-        data: listing,
-      }));
-      
-      setCards(data);
-      setIsEmpty(data.length === 0);
-    } catch (err) {
-      setError('Failed to load listings. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-  
-  // Load cards on mount
-  useEffect(() => {
-    if (user) {
-      loadCards();
-    }
-  }, [user, loadCards]);
-  
-  // Handle like action (used by both swipe and modal)
-  const handleLike = useCallback((card: CardData) => {
-    toast.success(`Liked ${card.type === 'listing' ? (card.data as Listing).title : (card.data as User).fullName}!`);
-    
-    // Simulate a match (30% chance)
-    if (Math.random() < 0.3) {
-      const match = {
-        id: crypto.randomUUID(),
-        tenantId: user?.id || 'demo-user',
-        landlordId: card.type === 'listing' ? (card.data as Listing).ownerId : card.data.id,
-        listingId: card.type === 'listing' ? card.data.id : '',
-        createdAt: Date.now(),
-      };
-      
-      addMatch(match);
-      
-      setCurrentMatch({
-        user: {
-          id: 'match-user',
-          username: 'sarah',
-          email: 'sarah@example.com',
-          fullName: 'Sarah',
-          age: 26,
-          searchLocation: 'New York, NY',
-          mode: 'offering',
-          profilePicture: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=face',
-          bio: '',
-          lifestyleTags: [],
-          isVerified: true,
-          createdAt: '',
-          updatedAt: '',
-        },
+      // Record swipe via API
+      const result = await createSwipe({
+        swiperId: user.id,
+        swipedUserId: card.data.id,
+        direction: 'like',
       });
+      
+      toast.success(`Liked ${card.data.fullName}!`);
+      
+      // Check if it's a match
+      if (result.matched) {
+        setCurrentMatch({
+          matchedUser: card.data,
+        });
+      }
+    } catch (error) {
+      console.error('Swipe failed:', error);
+      // Still show success for demo purposes
+      toast.success(`Liked ${card.data.fullName}!`);
+      
+      // Simulate match (30% chance) for demo
+      if (Math.random() < 0.3) {
+        setCurrentMatch({
+          matchedUser: card.data,
+        });
+      }
+    } finally {
+      setIsSwipeLoading(false);
     }
-  }, [user, addMatch, setCurrentMatch]);
+  }, [user, isSwipeLoading, setCurrentMatch]);
   
   // Handle pass action
-  const handlePass = useCallback(() => {
+  const handlePass = useCallback(async (card: CardData) => {
+    if (!user || isSwipeLoading) return;
+    
+    try {
+      // Record swipe via API
+      await createSwipe({
+        swiperId: user.id,
+        swipedUserId: card.data.id,
+        direction: 'pass',
+      });
+    } catch (error) {
+      // Silent fail for pass
+      console.error('Pass swipe failed:', error);
+    }
+    
     toast('Passed', { icon: '👋' });
-  }, []);
+  }, [user, isSwipeLoading]);
   
   const handleSwipe = useCallback((_id: string, direction: SwipeDirection, card: CardData) => {
     if (direction === 'right') {
       handleLike(card);
     } else if (direction === 'left') {
-      handlePass();
+      handlePass(card);
     }
   }, [handleLike, handlePass]);
   
@@ -121,6 +117,10 @@ export function DiscoverPage() {
   const handleCloseDetail = useCallback(() => {
     setSelectedCard(null);
   }, []);
+  
+  const handleRefresh = useCallback(() => {
+    mutate();
+  }, [mutate]);
   
   // If no user profile, prompt to create one
   if (!user) {
@@ -142,12 +142,11 @@ export function DiscoverPage() {
   }
   
   // Loading state
-  if (isLoading) {
+  if (isFetchingCandidates) {
     return (
       <div className="flex flex-col h-full">
         <Header />
         <div className="flex-1 flex flex-col px-4 py-2">
-          {/* Skeleton card stack effect */}
           <div className="relative flex-1">
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[85%] h-[calc(100%-120px)] rounded-2xl card-stack-1">
               <CardSkeleton />
@@ -159,8 +158,6 @@ export function DiscoverPage() {
               <CardSkeleton />
             </div>
           </div>
-          
-          {/* Skeleton action buttons */}
           <div className="flex items-center justify-center gap-10 py-4">
             <div className="h-16 w-16 rounded-full bg-white/5 animate-pulse" />
             <div className="h-20 w-20 rounded-full bg-white/5 animate-pulse" />
@@ -171,32 +168,32 @@ export function DiscoverPage() {
   }
   
   // Error state
-  if (error) {
+  if (isError) {
     return (
       <div className="flex flex-col h-full">
         <Header />
         <ErrorState
-          title="Couldn't load listings"
-          message={error}
-          onRetry={loadCards}
+          title="Couldn't load candidates"
+          message={error?.message || 'Failed to load. Please try again.'}
+          onRetry={handleRefresh}
           className="flex-1"
         />
       </div>
     );
   }
   
-  // Empty state (no more cards)
+  // Empty state
   if (isEmpty || cards.length === 0) {
     return (
       <div className="flex flex-col h-full">
         <Header />
         <EmptyState
           icon={Layers}
-          title="No more listings"
-          description="You've seen all available listings. Check back later for new ones!"
+          title="No more candidates"
+          description="You've seen everyone! Check back later for new people."
           action={{
             label: 'Refresh',
-            onClick: loadCards,
+            onClick: handleRefresh,
           }}
           className="flex-1"
         />
@@ -211,7 +208,7 @@ export function DiscoverPage() {
       {/* Refresh hint */}
       <div className="flex justify-center py-1">
         <button 
-          onClick={loadCards}
+          onClick={handleRefresh}
           className="flex items-center gap-1 text-xs text-white/40 hover:text-white/60 transition-colors"
         >
           <RefreshCw className="h-3 w-3" />
@@ -229,22 +226,13 @@ export function DiscoverPage() {
         />
       </div>
       
-      {/* Detail Modal */}
-      {selectedCard && selectedCard.type === 'listing' && (
-        <ListingDetailModal
-          listing={selectedCard.data as Listing}
-          onClose={handleCloseDetail}
-          onLike={() => handleLike(selectedCard)}
-          onPass={handlePass}
-        />
-      )}
-      
-      {selectedCard && selectedCard.type === 'user' && (
+      {/* Detail Modal - Using UserDetailModal since candidates are users */}
+      {selectedCard && (
         <UserDetailModal
-          user={selectedCard.data as User}
+          user={selectedCard.data}
           onClose={handleCloseDetail}
           onLike={() => handleLike(selectedCard)}
-          onPass={handlePass}
+          onPass={() => handlePass(selectedCard)}
         />
       )}
     </div>

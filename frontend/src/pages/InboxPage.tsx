@@ -1,23 +1,18 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useStore } from '../stores/useStore';
+import { useMatches } from '../hooks/useMatches';
 import { Avatar } from '../components/ui/Avatar';
 import { Card, CardContent } from '../components/ui/Card';
-import { EmptyState, ListItemSkeleton } from '../components/ui';
+import { EmptyState, ListItemSkeleton, ErrorState } from '../components/ui';
 import { cn } from '../lib/utils';
 
 export function InboxPage() {
   const navigate = useNavigate();
-  const matches = useStore((state) => state.matches);
   const user = useStore((state) => state.user);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  // Fetch matches from API
+  const { matches, count, isLoading, isError, error, mutate } = useMatches();
   
   // No user state
   if (!user) {
@@ -45,9 +40,9 @@ export function InboxPage() {
       {/* Header */}
       <div className="flex items-center justify-center p-4 sticky top-0 backdrop-blur-sm z-10" style={{ backgroundColor: 'rgba(15, 26, 35, 0.3)' }}>
         <h2 className="text-white text-lg font-semibold tracking-wide">Matches</h2>
-        {matches.length > 0 && (
+        {count > 0 && (
           <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded-full">
-            {matches.length}
+            {count}
           </span>
         )}
       </div>
@@ -61,6 +56,14 @@ export function InboxPage() {
               <ListItemSkeleton key={i} />
             ))}
           </div>
+        ) : isError ? (
+          // Error state
+          <ErrorState
+            title="Couldn't load matches"
+            message={error?.message || 'Failed to load matches.'}
+            onRetry={() => mutate()}
+            className="h-full"
+          />
         ) : matches.length === 0 ? (
           // Empty state
           <EmptyState
@@ -78,7 +81,7 @@ export function InboxPage() {
           <div className="flex flex-col gap-3">
             {matches.map((match, index) => (
               <Card 
-                key={match.id} 
+                key={match.matchId} 
                 variant="acrylic"
                 className={cn(
                   'cursor-pointer hover:bg-white/5 transition-all duration-200',
@@ -89,13 +92,18 @@ export function InboxPage() {
               >
                 <CardContent className="flex items-center gap-4 p-4">
                   <Avatar 
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face"
+                    src={match.matchedUser?.profilePicture}
                     size="lg" 
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold truncate">Sarah</p>
+                    <p className="text-white font-semibold truncate">
+                      {match.matchedUser?.fullName || 'Unknown User'}
+                    </p>
                     <p className="text-slate-400 text-sm">
-                      Matched {new Date(match.createdAt).toLocaleDateString()}
+                      {match.matchedUser?.searchLocation || 'Location unknown'}
+                    </p>
+                    <p className="text-slate-500 text-xs mt-1">
+                      Matched {new Date(match.matchedAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-primary">

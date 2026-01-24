@@ -3,10 +3,10 @@ import { Button } from '../ui/Button';
 import { VerifiedBadge } from '../ui/Badge';
 import { Chip } from '../ui/Chip';
 import { cn } from '../../lib/utils';
-import type { User } from '../../types';
+import type { ApiUser } from '../../lib/api';
 
 interface UserDetailModalProps {
-  user: User;
+  user: ApiUser;
   onClose: () => void;
   onLike: () => void;
   onPass: () => void;

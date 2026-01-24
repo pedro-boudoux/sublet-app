@@ -1,10 +1,10 @@
 import { MapPin, Briefcase } from 'lucide-react';
 import { VerifiedBadge } from '../ui/Badge';
 import { Chip } from '../ui/Chip';
-import type { User } from '../../types';
+import type { ApiUser } from '../../lib/api';
 
 interface UserCardProps {
-  user: User;
+  user: ApiUser;
   onTap?: () => void;
 }
 
