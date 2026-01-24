@@ -1,0 +1,49 @@
+meta {
+  name: create-listing
+  type: http
+  seq: 9
+}
+
+post {
+  url: http://localhost:7071/api/listings
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "ownerId": "5f88df61-9d62-4738-a422-d3578170f2ed",
+    "title": "Sunny Studio in Downtown",
+    "price": 1250,
+    "availableDate": "2026-02-15",
+    "location": "123 Main St, Guelph",
+    "distanceTo": "10 mins to University of Guelph",
+    "type": "studio",
+    "amenities": ["Utilities included", "Furnished", "In-unit laundry"],
+    "images": [],
+    "description": "Bright and spacious studio with large windows. Perfect for students."
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Create Listing
+  
+  Creates a new sublet listing.
+  
+  ## Body Parameters
+  - `ownerId` (required) - ID of the user creating the listing
+  - `title` (required) - Listing title
+  - `price` (required) - Monthly rent in dollars
+  - `availableDate` (required) - When available, ISO date
+  - `location` (required) - Address or neighborhood
+  - `type` (required) - "studio" | "1br" | "2br" | "room"
+  - `distanceTo` (optional) - Distance info, e.g. "10 mins to campus"
+  - `amenities` (optional) - Array of amenity strings
+  - `images` (optional) - Array of image URLs
+  - `description` (optional) - Detailed description
+}

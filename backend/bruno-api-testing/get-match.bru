@@ -5,9 +5,14 @@ meta {
 }
 
 get {
-  url: http://localhost:7071/api/matches/your-match-id-here
+  url: http://localhost:7071/api/matches/6e9b2251-d8e4-43a3-a903-8619a54011ff
   body: none
   auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
 }
 
 docs {
@@ -48,8 +53,4 @@ docs {
     ]
   }
   ```
-}
-
-settings {
-  encodeUrl: true
 }
