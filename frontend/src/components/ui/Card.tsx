@@ -4,12 +4,14 @@ export interface CardProps {
   children: React.ReactNode;
   variant?: 'default' | 'acrylic';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function Card({
   children,
   variant = 'default',
   className,
+  style,
 }: CardProps) {
   return (
     <div
@@ -26,6 +28,7 @@ export function Card({
         
         className
       )}
+      style={style}
     >
       {children}
     </div>
