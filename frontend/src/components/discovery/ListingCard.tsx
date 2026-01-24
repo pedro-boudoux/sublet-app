@@ -5,11 +5,23 @@ import type { Listing } from '../../types';
 
 interface ListingCardProps {
   listing: Listing;
+  onTap?: () => void;
 }
 
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({ listing, onTap }: ListingCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    // Only trigger onTap if it's a click (not a drag)
+    if (onTap) {
+      e.stopPropagation();
+      onTap();
+    }
+  };
+
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a]">
+    <div 
+      className="relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a]"
+      onClick={handleClick}
+    >
       {/* Main Image */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"

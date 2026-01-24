@@ -13,9 +13,10 @@ interface CardStackProps {
   cards: CardData[];
   onSwipe: (id: string, direction: SwipeDirection, data: CardData) => void;
   onEmpty?: () => void;
+  onCardTap?: (card: CardData) => void;
 }
 
-export function CardStack({ cards, onSwipe, onEmpty }: CardStackProps) {
+export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps) {
   const [currentIndex, setCurrentIndex] = useState(cards.length - 1);
   const currentIndexRef = useRef(currentIndex);
   
@@ -85,6 +86,7 @@ export function CardStack({ cards, onSwipe, onEmpty }: CardStackProps) {
                 type={card.type}
                 onSwipe={(dir) => handleSwipe(card.id, dir, card)}
                 onCardLeftScreen={() => handleCardLeftScreen(cardIndex)}
+                onTap={isTop && onCardTap ? () => onCardTap(card) : undefined}
                 className={isTop ? 'z-30' : 'z-20'}
                 preventSwipe={isTop ? ['up', 'down'] : ['left', 'right', 'up', 'down']}
               />

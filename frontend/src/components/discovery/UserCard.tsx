@@ -5,11 +5,22 @@ import type { User } from '../../types';
 
 interface UserCardProps {
   user: User;
+  onTap?: () => void;
 }
 
-export function UserCard({ user }: UserCardProps) {
+export function UserCard({ user, onTap }: UserCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onTap) {
+      e.stopPropagation();
+      onTap();
+    }
+  };
+
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a]">
+    <div 
+      className="relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a]"
+      onClick={handleClick}
+    >
       {/* Main Image */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"

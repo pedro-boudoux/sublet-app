@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layers, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/layout/Header';
-import { CardStack, type SwipeDirection } from '../components/discovery';
+import { CardStack, ListingDetailModal, UserDetailModal, type SwipeDirection } from '../components/discovery';
 import { CardSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { useStore } from '../stores/useStore';
 import { MOCK_LISTINGS } from '../hooks/useCandidates';
@@ -21,11 +21,12 @@ export function DiscoverPage() {
   const setCurrentMatch = useStore((state) => state.setCurrentMatch);
   const addMatch = useStore((state) => state.addMatch);
   
-  // Simulate loading state
+  // State
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<CardData[]>([]);
   const [isEmpty, setIsEmpty] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   
   // Simulate fetching data
   const loadCards = useCallback(async () => {
@@ -60,47 +61,65 @@ export function DiscoverPage() {
     }
   }, [user, loadCards]);
   
-  const handleSwipe = useCallback((_id: string, direction: SwipeDirection, card: CardData) => {
-    if (direction === 'right') {
-      toast.success(`Liked ${card.type === 'listing' ? (card.data as Listing).title : (card.data as User).fullName}!`);
+  // Handle like action (used by both swipe and modal)
+  const handleLike = useCallback((card: CardData) => {
+    toast.success(`Liked ${card.type === 'listing' ? (card.data as Listing).title : (card.data as User).fullName}!`);
+    
+    // Simulate a match (30% chance)
+    if (Math.random() < 0.3) {
+      const match = {
+        id: crypto.randomUUID(),
+        tenantId: user?.id || 'demo-user',
+        landlordId: card.type === 'listing' ? (card.data as Listing).ownerId : card.data.id,
+        listingId: card.type === 'listing' ? card.data.id : '',
+        createdAt: Date.now(),
+      };
       
-      // Simulate a match (30% chance)
-      if (Math.random() < 0.3) {
-        const match = {
-          id: crypto.randomUUID(),
-          tenantId: user?.id || 'demo-user',
-          landlordId: card.type === 'listing' ? (card.data as Listing).ownerId : card.data.id,
-          listingId: card.type === 'listing' ? card.data.id : '',
-          createdAt: Date.now(),
-        };
-        
-        addMatch(match);
-        
-        setCurrentMatch({
-          user: {
-            id: 'match-user',
-            username: 'sarah',
-            email: 'sarah@example.com',
-            fullName: 'Sarah',
-            age: 26,
-            searchLocation: 'New York, NY',
-            mode: 'offering',
-            profilePicture: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=face',
-            bio: '',
-            lifestyleTags: [],
-            isVerified: true,
-            createdAt: '',
-            updatedAt: '',
-          },
-        });
-      }
-    } else if (direction === 'left') {
-      toast('Passed', { icon: '👋' });
+      addMatch(match);
+      
+      setCurrentMatch({
+        user: {
+          id: 'match-user',
+          username: 'sarah',
+          email: 'sarah@example.com',
+          fullName: 'Sarah',
+          age: 26,
+          searchLocation: 'New York, NY',
+          mode: 'offering',
+          profilePicture: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=face',
+          bio: '',
+          lifestyleTags: [],
+          isVerified: true,
+          createdAt: '',
+          updatedAt: '',
+        },
+      });
     }
   }, [user, addMatch, setCurrentMatch]);
   
+  // Handle pass action
+  const handlePass = useCallback(() => {
+    toast('Passed', { icon: '👋' });
+  }, []);
+  
+  const handleSwipe = useCallback((_id: string, direction: SwipeDirection, card: CardData) => {
+    if (direction === 'right') {
+      handleLike(card);
+    } else if (direction === 'left') {
+      handlePass();
+    }
+  }, [handleLike, handlePass]);
+  
   const handleEmpty = useCallback(() => {
     setIsEmpty(true);
+  }, []);
+  
+  const handleCardTap = useCallback((card: CardData) => {
+    setSelectedCard(card);
+  }, []);
+  
+  const handleCloseDetail = useCallback(() => {
+    setSelectedCard(null);
   }, []);
   
   // If no user profile, prompt to create one
@@ -206,8 +225,28 @@ export function DiscoverPage() {
           cards={cards}
           onSwipe={handleSwipe}
           onEmpty={handleEmpty}
+          onCardTap={handleCardTap}
         />
       </div>
+      
+      {/* Detail Modal */}
+      {selectedCard && selectedCard.type === 'listing' && (
+        <ListingDetailModal
+          listing={selectedCard.data as Listing}
+          onClose={handleCloseDetail}
+          onLike={() => handleLike(selectedCard)}
+          onPass={handlePass}
+        />
+      )}
+      
+      {selectedCard && selectedCard.type === 'user' && (
+        <UserDetailModal
+          user={selectedCard.data as User}
+          onClose={handleCloseDetail}
+          onLike={() => handleLike(selectedCard)}
+          onPass={handlePass}
+        />
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ interface SwipeCardProps {
   type: 'listing' | 'user';
   onSwipe: (direction: SwipeDirection) => void;
   onCardLeftScreen: () => void;
+  onTap?: () => void;
   className?: string;
   preventSwipe?: SwipeDirection[];
 }
@@ -21,6 +22,7 @@ export const SwipeCard = forwardRef<any, SwipeCardProps>(({
   type,
   onSwipe,
   onCardLeftScreen,
+  onTap,
   className,
   preventSwipe = ['up', 'down'],
 }, ref) => {
@@ -36,9 +38,9 @@ export const SwipeCard = forwardRef<any, SwipeCardProps>(({
     >
       <div className="w-full h-full cursor-grab active:cursor-grabbing group">
         {type === 'listing' ? (
-          <ListingCard listing={data as Listing} />
+          <ListingCard listing={data as Listing} onTap={onTap} />
         ) : (
-          <UserCard user={data as User} />
+          <UserCard user={data as User} onTap={onTap} />
         )}
       </div>
     </TinderCard>
