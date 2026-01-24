@@ -1,50 +1,50 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AppShell } from './components/layout/AppShell';
+import { MatchOverlay } from './components/match';
+import { DiscoverPage, ProfilePage, SavedPage, InboxPage, OnboardingPage } from './pages';
+import './App.css';
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
+    <BrowserRouter>
+      {/* Match Overlay (global) */}
+      <MatchOverlay />
+      
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: 'rgba(15, 26, 35, 0.9)',
+            color: '#fff',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#0079d6',
+              secondary: '#fff',
+            },
+          },
         }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      />
+      
+      {/* Routes */}
+      <Routes>
+        {/* Onboarding (no bottom nav) */}
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        
+        {/* Main App with Bottom Nav */}
+        <Route element={<AppShell />}>
+          <Route path="/" element={<DiscoverPage />} />
+          <Route path="/saved" element={<SavedPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
