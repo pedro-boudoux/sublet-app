@@ -23,6 +23,7 @@ pkgs.mkShell {
     webkitgtk_4_1
     openssl
     gsettings-desktop-schemas # <-- added this so gtk knows how to draw windows
+    nodejs_20
   ];
 
   GREETING = "DEV MODE ON";
