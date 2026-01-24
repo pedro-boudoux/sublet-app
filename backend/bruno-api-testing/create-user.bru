@@ -1,0 +1,30 @@
+meta {
+  name: create-user
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:7071/api/users
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username" : "username",
+    "email" : "email",
+    "fullName" : "fullName",
+    "age" : 3,
+    "searchLocation" : "city",
+    "mode" : "looking" | "offering",
+    "profilePicture" : "url-to-pfp",
+    "bio" : "bio",
+    "lifestyleTags", ["list", "of", "tags"]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

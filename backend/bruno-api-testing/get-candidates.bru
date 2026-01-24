@@ -1,0 +1,15 @@
+meta {
+  name: get-candidates
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:7071/api/get-candidates
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
