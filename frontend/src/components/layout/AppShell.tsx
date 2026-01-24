@@ -3,11 +3,17 @@ import { BottomNav } from '../ui/BottomNav';
 
 export function AppShell() {
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden bg-background-dark">
+    <div 
+      className="relative w-full h-full flex flex-col overflow-hidden"
+      style={{ backgroundColor: '#0f1a23' }}
+    >
       {/* Ambient Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Primary Glow */}
-        <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] opacity-70 mix-blend-screen animate-pulse-slow" />
+        <div 
+          className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] rounded-full blur-[100px] opacity-70 mix-blend-screen animate-pulse-slow" 
+          style={{ backgroundColor: 'rgba(0, 121, 214, 0.2)' }}
+        />
         
         {/* Purple Accent */}
         <div className="absolute top-[40%] -left-[20%] w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[100px] opacity-50 mix-blend-screen" />

@@ -1,52 +1,49 @@
 @import "tailwindcss";
 
-/* Custom Theme Variables */
+/* Tailwind v4 Theme Configuration */
 @theme {
-  /* Colors */
+  /* Custom Colors - these create bg-*, text-*, border-* utilities */
   --color-primary: #0079d6;
   --color-background-dark: #0f1a23;
   --color-background-light: #f5f7f8;
-  --color-glass-bg: rgba(30, 41, 59, 0.4);
-  --color-glass-border: rgba(255, 255, 255, 0.1);
-  --color-acrylic-bg: rgba(15, 26, 35, 0.65);
   
-  /* Font Family */
-  --font-display: "Inter", system-ui, sans-serif;
-  
-  /* Border Radius */
-  --radius-xl: 1.5rem;
-  --radius-2xl: 2rem;
-  
-  /* Shadows */
-  --shadow-fluent: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-  --shadow-glow: 0 0 20px rgba(0, 121, 214, 0.4);
+  /* Font */
+  --font-family-display: "Inter", system-ui, sans-serif;
 }
 
 /* Base Styles */
-:root {
-  font-family: var(--font-display);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
-  color: #ffffff;
-  background-color: var(--color-background-dark);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f1a23;
+  color: #ffffff;
+  min-height: 100vh;
 }
 
 html, body, #root {
   height: 100%;
   width: 100%;
-  margin: 0;
-  padding: 0;
   overflow: hidden;
 }
 
 /* Acrylic Panel Effect */
 .acrylic-panel {
-  background: var(--color-acrylic-bg);
+  background: rgba(15, 26, 35, 0.65);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -108,4 +105,9 @@ html, body, #root {
 /* Selection Color */
 ::selection {
   background: rgba(0, 121, 214, 0.3);
+}
+
+/* Fluent Shadow utility */
+.shadow-fluent {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
 }

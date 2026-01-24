@@ -96,7 +96,7 @@ export function OnboardingPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background-dark">
+    <div className="flex flex-col h-full" style={{ backgroundColor: '#0f1a23' }}>
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Button variant="ghost" size="icon" onClick={handleBack}>
