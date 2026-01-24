@@ -1,0 +1,43 @@
+meta {
+  name: update-listing
+  type: http
+  seq: 11
+}
+
+patch {
+  url: http://localhost:7071/api/listings/eb17f709-629b-4bd0-a07f-2dba90563d36
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "price": 16270,
+    "amenities": ["Utilities included", "Furnished", "In-unit laundry", "Parking"]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Update Listing
+  
+  Partially updates a listing. Only include fields you want to change.
+  
+  ## Path Parameters
+  - `listingId` (required) - The unique listing ID in the URL path
+  
+  ## Body Parameters (all optional)
+  - `title` - Updated title
+  - `price` - Updated price
+  - `availableDate` - Updated availability
+  - `location` - Updated location
+  - `distanceTo` - Updated distance info
+  - `type` - Updated type
+  - `amenities` - Updated amenities array
+  - `images` - Updated images array
+  - `description` - Updated description
+}

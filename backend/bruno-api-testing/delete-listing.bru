@@ -1,0 +1,29 @@
+meta {
+  name: delete-listing
+  type: http
+  seq: 12
+}
+
+delete {
+  url: http://localhost:7071/api/listings/4fd91d5e-658f-4f58-acbb-c34e2c41a5d8
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Delete Listing
+  
+  Deletes a listing by ID.
+  
+  ## Path Parameters
+  - `listingId` (required) - The unique listing ID in the URL path
+  
+  ## Response
+  - 204 No Content on success
+  - 404 if listing not found
+}

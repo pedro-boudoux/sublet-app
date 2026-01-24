@@ -1,0 +1,30 @@
+meta {
+  name: get-listing
+  type: http
+  seq: 10
+}
+
+get {
+  url: http://localhost:7071/api/listings/eb17f709-629b-4bd0-a07f-2dba90563d36
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  # Get Listing
+  
+  Retrieves a listing by ID.
+  
+  ## Path Parameters
+  - `listingId` (required) - The unique listing ID in the URL path
+  
+  ## Example URL
+  ```
+  GET /api/listings/abc123-def456
+  ```
+}
