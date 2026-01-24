@@ -174,17 +174,28 @@ async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    ...options,
-  });
+  let response: Response;
+  
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+    });
+  } catch (err) {
+    // Network error - server not reachable
+    console.error(`API request failed: ${API_BASE}${endpoint}`, err);
+    throw new ApiError(
+      'Cannot connect to server. Make sure the backend is running.',
+      0
+    );
+  }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new ApiError(errorData.error || 'Request failed', response.status);
+    const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+    throw new ApiError(errorData.error || `Request failed: ${response.statusText}`, response.status);
   }
 
   return response.json();
