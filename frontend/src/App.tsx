@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppShell } from './components/layout/AppShell';
-import { DiscoverPage, ProfilePage, SavedPage, InboxPage } from './pages';
+import { DiscoverPage, ProfilePage, SavedPage, InboxPage, OnboardingPage } from './pages';
 import './App.css';
 
 function App() {
@@ -29,6 +29,10 @@ function App() {
       
       {/* Routes */}
       <Routes>
+        {/* Onboarding (no bottom nav) */}
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        
+        {/* Main App with Bottom Nav */}
         <Route element={<AppShell />}>
           <Route path="/" element={<DiscoverPage />} />
           <Route path="/saved" element={<SavedPage />} />
