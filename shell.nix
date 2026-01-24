@@ -11,6 +11,8 @@ pkgs.mkShell {
   ];
 
   buildInputs = with pkgs; [
+    azure-functions-core-tools
+    azure-cli
     at-spi2-atk
     atkmm
     cairo
