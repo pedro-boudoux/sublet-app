@@ -20,7 +20,7 @@
         "swr": "^2.3.8",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.18",
-        "zustand": "^5.0.10",
+        "zustand": "^5.0.10"
       },
       "devDependencies": {
         "@tauri-apps/cli": "^2",
@@ -29,9 +29,9 @@
         "@types/react-dom": "^19.1.6",
         "@vitejs/plugin-react": "^4.6.0",
         "typescript": "~5.8.3",
-        "vite": "^7.0.4",
-      },
-    },
+        "vite": "^7.0.4"
+      }
+    }
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.28.6", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-JYgintcMjRiCvS8mMECzaEn+m3PfoQiyqukOMCCVQtoJGYJw8j/8LBJEiqkHLkfwCcs74E3pbAUFNg7d9VNJ+Q=="],
@@ -422,6 +422,6 @@
 
     "@tailwindcss/oxide-wasm32-wasi/@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" }, "bundled": true }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
-    "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+    "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="]
   }
 }
