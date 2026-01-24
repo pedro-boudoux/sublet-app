@@ -9,7 +9,7 @@ import { ProfileHeader, AboutSection, LifestyleSection, SocialSection } from '..
 import { useAuthContext } from '../components/auth';
 import { useStore } from '../stores/useStore';
 import { updateUser, ApiError } from '../lib/api';
-import { LIFESTYLE_TAGS } from '../types';
+import { LOOKING_TAGS } from '../constants/tagPairs';
 
 const modeOptions = [
   { value: 'looking', label: 'Looking for Place' },
@@ -240,7 +240,7 @@ export function ProfilePage() {
           <div className="space-y-3">
             <h3 className="text-white font-semibold">Lifestyle & Habits</h3>
             <div className="flex flex-wrap gap-2">
-              {LIFESTYLE_TAGS.map((tag) => (
+              {LOOKING_TAGS.map((tag) => (
                 <Chip
                   key={tag}
                   selected={editTags.includes(tag)}

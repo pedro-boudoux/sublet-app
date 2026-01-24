@@ -15,6 +15,7 @@ interface UpdateListingRequest {
     distanceTo?: string;
     type?: "studio" | "1br" | "2br" | "room";
     amenities?: string[];
+    lifestyleTags?: string[];
     images?: string[];
     description?: string;
 }
@@ -31,6 +32,7 @@ interface UpdateListingRequest {
  * @param request.body.distanceTo - Updated distance info (optional)
  * @param request.body.type - Updated type (optional)
  * @param request.body.amenities - Updated amenities array (optional)
+ * @param request.body.lifestyleTags - Updated lifestyle tags array (optional)
  * @param request.body.images - Updated images array (optional)
  * @param request.body.description - Updated description (optional)
  * 

@@ -7,6 +7,7 @@ import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { useStore } from '../stores/useStore';
 import { createListing, ApiError, type ListingType } from '../lib/api';
+import { OFFERING_TAGS } from '../constants/tagPairs';
 
 const listingTypeOptions = [
   { value: 'studio', label: 'Studio' },
@@ -33,7 +34,7 @@ const AMENITIES = [
 export function CreateListingPage() {
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
-  
+
   // Form state
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -43,15 +44,22 @@ export function CreateListingPage() {
   const [distanceTo, setDistanceTo] = useState('');
   const [description, setDescription] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
+  const [lifestyleTags, setLifestyleTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const toggleAmenity = (amenity: string) => {
     setAmenities((prev) =>
       prev.includes(amenity) ? prev.filter((a) => a !== amenity) : [...prev, amenity]
     );
   };
-  
+
+  const toggleLifestyleTag = (tag: string) => {
+    setLifestyleTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
   const addMockImage = () => {
     // For demo purposes, add a placeholder image
     const mockImages = [
@@ -63,20 +71,20 @@ export function CreateListingPage() {
     const randomImage = mockImages[images.length % mockImages.length];
     setImages((prev) => [...prev, randomImage]);
   };
-  
+
   const handleSubmit = async () => {
     if (!user) {
       toast.error('Please log in first');
       return;
     }
-    
+
     if (!title || !price || !location || !availableDate) {
       toast.error('Please fill in all required fields');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await createListing({
         ownerId: user.id,
@@ -88,9 +96,10 @@ export function CreateListingPage() {
         distanceTo,
         description,
         amenities,
+        lifestyleTags,
         images,
       });
-      
+
       toast.success('Listing created successfully!');
       navigate('/saved');
     } catch (error) {
@@ -104,7 +113,7 @@ export function CreateListingPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   if (!user || user.mode !== 'offering') {
     return (
       <div className="flex flex-col h-full">
@@ -136,7 +145,7 @@ export function CreateListingPage() {
         <h2 className="text-white text-lg font-semibold">Create Listing</h2>
         <div className="w-10" />
       </div>
-      
+
       {/* Form */}
       <div className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-32">
         <div className="flex flex-col gap-6">
@@ -157,7 +166,7 @@ export function CreateListingPage() {
               </button>
             </div>
           </div>
-          
+
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Title *</label>
@@ -169,7 +178,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Type */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Type *</label>
@@ -179,7 +188,7 @@ export function CreateListingPage() {
               onChange={(v) => setListingType(v as ListingType)}
             />
           </div>
-          
+
           {/* Price & Date */}
           <div className="flex gap-4">
             <div className="flex-1">
@@ -202,7 +211,7 @@ export function CreateListingPage() {
               />
             </div>
           </div>
-          
+
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Location *</label>
@@ -214,7 +223,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Distance To */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Distance To (optional)</label>
@@ -226,7 +235,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
@@ -238,7 +247,7 @@ export function CreateListingPage() {
               className="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
             />
           </div>
-          
+
           {/* Amenities */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Amenities</label>
@@ -254,13 +263,30 @@ export function CreateListingPage() {
               ))}
             </div>
           </div>
+
+          {/* Lifestyle Tags (Offering version) */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Lifestyle Compatibility</label>
+            <p className="text-slate-500 text-xs mb-3">Help tenants know if they're a good fit</p>
+            <div className="flex flex-wrap gap-2">
+              {OFFERING_TAGS.map((tag) => (
+                <Chip
+                  key={tag}
+                  selected={lifestyleTags.includes(tag)}
+                  onClick={() => toggleLifestyleTag(tag)}
+                >
+                  {tag}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-      
+
       {/* Submit Button */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0f1a23] via-[#0f1a23] to-transparent">
-        <Button 
-          className="w-full h-14" 
+        <Button
+          className="w-full h-14"
           onClick={handleSubmit}
           disabled={isSubmitting || !title || !price || !location || !availableDate}
         >

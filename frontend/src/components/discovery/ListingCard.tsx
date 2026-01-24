@@ -70,7 +70,7 @@ export function ListingCard({ listing, onTap }: ListingCardProps) {
           {listing.title}
         </h2>
 
-        {/* Location & Features */}
+        {/* Location & Tags */}
         <div className="flex flex-col gap-2">
           {/* Location */}
           <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
@@ -80,11 +80,11 @@ export function ListingCard({ listing, onTap }: ListingCardProps) {
             </span>
           </div>
 
-          {/* Amenities (using amenities instead of features) */}
-          {listing.amenities && listing.amenities.length > 0 && (
+          {/* Lifestyle Tags (offering tags like Dog Friendly, Smoke-Free) */}
+          {listing.lifestyleTags && listing.lifestyleTags.length > 0 && (
             <div className="flex items-center gap-2 text-white/70 text-sm">
               <Check className="h-[18px] w-[18px]" />
-              <span>{listing.amenities.slice(0, 3).join(' • ')}</span>
+              <span>{listing.lifestyleTags.slice(0, 3).join(' • ')}</span>
             </div>
           )}
         </div>

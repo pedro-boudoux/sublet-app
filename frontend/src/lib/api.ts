@@ -81,6 +81,7 @@ export interface ApiListing {
   distanceTo: string;
   type: ListingType;
   amenities: string[];
+  lifestyleTags: string[];  // Offering-style tags like "Dog Friendly"
   images: string[];
   description: string;
   isVerified: boolean;
@@ -97,6 +98,7 @@ export interface CreateListingRequest {
   type: ListingType;
   distanceTo?: string;
   amenities?: string[];
+  lifestyleTags?: string[];
   images?: string[];
   description?: string;
 }
@@ -109,6 +111,7 @@ export interface UpdateListingRequest {
   distanceTo?: string;
   type?: ListingType;
   amenities?: string[];
+  lifestyleTags?: string[];
   images?: string[];
   description?: string;
 }

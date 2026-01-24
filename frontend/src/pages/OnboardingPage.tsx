@@ -9,7 +9,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { useAuthContext } from '../components/auth';
 import { useStore } from '../stores/useStore';
 import { createUser, type CreateUserRequest, ApiError } from '../lib/api';
-import { LIFESTYLE_TAGS } from '../types';
+import { LOOKING_TAGS } from '../constants/tagPairs';
 import { cn } from '../lib/utils';
 
 const modeOptions = [
@@ -277,7 +277,7 @@ export function OnboardingPage() {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              {LIFESTYLE_TAGS.map((tag) => (
+              {LOOKING_TAGS.map((tag) => (
                 <Chip
                   key={tag}
                   selected={selectedTags.includes(tag)}

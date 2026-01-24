@@ -70,6 +70,7 @@ Use this as a reference when building the frontend.
   distanceTo?: string;     // e.g. "12 mins to NYU"
   type: "studio" | "1br" | "2br" | "room";  // Required
   amenities?: string[];    // e.g. ["Utilities included", "Furnished"]
+  lifestyleTags?: string[]; // Offering-style tags e.g. ["Dog Friendly", "Smoke-Free"]
   images?: string[];       // URLs from /api/upload/listing
   description?: string;
   isVerified: boolean;     // Default: false
