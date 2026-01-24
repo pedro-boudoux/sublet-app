@@ -53,12 +53,15 @@ export async function createUser(request: HttpRequest, context: InvocationContex
         const body = await request.json() as CreateUserRequest;
 
         // Validate required fields
-        if (!body.username || !body.email || !body.fullName || !body.age || !body.searchLocation || !body.mode) {
+        const requiredFields = ["username", "email", "fullName", "age", "searchLocation", "mode"] as const;
+        const missingFields = requiredFields.filter(field => !body[field]);
+
+        if (missingFields.length > 0) {
             return {
                 status: 400,
                 jsonBody: {
                     error: "Missing required fields",
-                    required: ["username", "email", "fullName", "age", "searchLocation", "mode"]
+                    missingFields
                 }
             };
         }
