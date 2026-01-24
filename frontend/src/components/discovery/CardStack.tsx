@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { SwipeCard, type SwipeDirection } from './SwipeCard';
 import { ActionButtons } from './ActionButtons';
 import type { ApiUser } from '../../lib/api';
@@ -16,8 +16,24 @@ interface CardStackProps {
 }
 
 export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps) {
-  const [currentIndex, setCurrentIndex] = useState(cards.length - 1);
-  const currentIndexRef = useRef(currentIndex);
+  // Initialize with the correct index based on cards length
+  const initialIndex = cards.length - 1;
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const currentIndexRef = useRef(initialIndex);
+  
+  // Track the cards length to detect when it changes
+  const cardsLengthRef = useRef(cards.length);
+  
+  // If cards length changed, reset the index (this handles the initial load case)
+  if (cards.length !== cardsLengthRef.current) {
+    const newIndex = cards.length - 1;
+    cardsLengthRef.current = cards.length;
+    // Only update if we need to (avoids unnecessary re-renders)
+    if (currentIndex !== newIndex && newIndex >= 0) {
+      setCurrentIndex(newIndex);
+      currentIndexRef.current = newIndex;
+    }
+  }
   
   const childRefs = useRef<Map<string, any>>(new Map());
   
@@ -53,7 +69,9 @@ export function CardStack({ cards, onSwipe, onEmpty, onCardTap }: CardStackProps
     }
   }, [canSwipe, currentIndex, cards]);
   
-  const visibleCards = cards.slice(Math.max(0, currentIndex - 2), currentIndex + 1);
+  const visibleCards = useMemo(() => {
+    return cards.slice(Math.max(0, currentIndex - 2), currentIndex + 1);
+  }, [cards, currentIndex]);
   
   return (
     <div className="relative w-full h-full flex flex-col">

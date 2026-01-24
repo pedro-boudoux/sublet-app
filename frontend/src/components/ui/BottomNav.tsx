@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Layers, Heart, MessageCircle, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -10,53 +10,59 @@ const navItems = [
 ] as const;
 
 export function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+  
   return (
     <nav className="fixed bottom-0 left-0 w-full z-50">
       {/* Acrylic Background */}
       <div className="bg-[#0f1a23]/80 backdrop-blur-xl border-t border-white/5">
         <div className="flex items-center justify-around h-20 pb-2 max-w-lg mx-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.id}
-              to={item.path}
-              className={({ isActive }) =>
-                cn(
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.path)}
+                className={cn(
                   'flex flex-col items-center justify-center w-full h-full gap-1',
-                  'transition-colors group relative',
+                  'transition-colors group relative bg-transparent border-none cursor-pointer',
                   isActive ? 'text-primary' : 'text-slate-500 hover:text-white'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* Active Indicator */}
-                  {isActive && (
-                    <div className="absolute -top-1 w-8 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(0,121,214,0.6)]" />
+                )}
+              >
+                {/* Active Indicator */}
+                {isActive && (
+                  <div className="absolute -top-1 w-8 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(0,121,214,0.6)]" />
+                )}
+                
+                {/* Icon */}
+                <Icon
+                  className={cn(
+                    'h-[26px] w-[26px] transition-transform',
+                    'group-hover:scale-110',
+                    isActive && 'scale-110'
                   )}
-                  
-                  {/* Icon */}
-                  <item.icon
-                    className={cn(
-                      'h-[26px] w-[26px] transition-transform',
-                      'group-hover:scale-110',
-                      isActive && 'scale-110'
-                    )}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  
-                  {/* Label */}
-                  <span
-                    className={cn(
-                      'text-[10px]',
-                      isActive ? 'font-bold' : 'font-medium'
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          ))}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                
+                {/* Label */}
+                <span
+                  className={cn(
+                    'text-[10px]',
+                    isActive ? 'font-bold' : 'font-medium'
+                  )}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
       

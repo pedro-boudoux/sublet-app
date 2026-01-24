@@ -5,6 +5,10 @@ import react from "@vitejs/plugin-react";
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
+// Backend API URL (Azure Functions default port is 7071)
+// @ts-expect-error process is a nodejs global
+const apiUrl = process.env.VITE_API_URL || 'http://localhost:7071';
+
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [
@@ -31,6 +35,14 @@ export default defineConfig(async () => ({
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
+    },
+    // 4. Proxy API requests to backend
+    proxy: {
+      '/api': {
+        target: apiUrl,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 }));

@@ -18,7 +18,7 @@ export function SavedPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 sticky top-0 backdrop-blur-sm z-10" style={{ backgroundColor: 'rgba(15, 26, 35, 0.3)' }}>
+      <div className="flex items-center justify-center p-4 sticky top-0 backdrop-blur-sm z-10" style={{ backgroundColor: 'rgba(15, 26, 35, 0.3)' }}>
         <h2 className="text-white text-lg font-semibold tracking-wide">
           {isOffering ? 'My Listings' : 'Saved'}
         </h2>
@@ -26,7 +26,7 @@ export function SavedPage() {
           <Button 
             variant="glass" 
             size="sm" 
-            className="h-9 px-3 rounded-full"
+            className="absolute right-4 h-9 px-3 rounded-full"
             onClick={() => navigate('/listings/create')}
           >
             <Plus className="h-4 w-4" />

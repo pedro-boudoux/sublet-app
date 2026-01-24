@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -28,17 +28,33 @@ export function DiscoverPage() {
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [isSwipeLoading, setIsSwipeLoading] = useState(false);
   
+  // Track if we've initialized cards to prevent infinite loops
+  const hasInitialized = useRef(false);
+  const lastCandidatesLength = useRef(-1);
+  
   // Use mock data if API returns empty (for demo)
   useEffect(() => {
-    if (!isFetchingCandidates) {
-      const candidatesData = candidates.length > 0 ? candidates : MOCK_LISTINGS;
-      const cardData = candidatesData.map((candidate) => ({
-        id: candidate.id,
-        data: candidate,
-      }));
-      setCards(cardData);
-      setIsEmpty(cardData.length === 0);
+    // Only update if loading finished and candidates changed
+    if (isFetchingCandidates) {
+      hasInitialized.current = false;
+      return;
     }
+    
+    // Check if candidates actually changed
+    if (hasInitialized.current && lastCandidatesLength.current === candidates.length) {
+      return;
+    }
+    
+    const candidatesData = candidates.length > 0 ? candidates : MOCK_LISTINGS;
+    const cardData = candidatesData.map((candidate) => ({
+      id: candidate.id,
+      data: candidate,
+    }));
+    
+    setCards(cardData);
+    setIsEmpty(cardData.length === 0);
+    hasInitialized.current = true;
+    lastCandidatesLength.current = candidates.length;
   }, [candidates, isFetchingCandidates]);
   
   // Handle like action
@@ -119,6 +135,8 @@ export function DiscoverPage() {
   }, []);
   
   const handleRefresh = useCallback(() => {
+    hasInitialized.current = false;
+    lastCandidatesLength.current = -1;
     mutate();
   }, [mutate]);
   
