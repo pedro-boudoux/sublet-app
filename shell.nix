@@ -2,7 +2,7 @@
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    apkg-config
+    pkg-config
     gobject-introspection
     cargo
     rustc
