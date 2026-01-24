@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SubletConnect Discovery Feed</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0079d6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1a23",
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "glass-bg": "rgba(30, 41, 59, 0.4)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem", 
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'fluent': '0 8px 32px 0 rgba(0, 0, 0, 0.36)',
+                        'glow': '0 0 20px rgba(0, 121, 214, 0.4)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom utilities for Acrylic effect and smooth rendering */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .acrylic-panel {
+            background: rgba(15, 26, 35, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-white h-screen w-full overflow-hidden relative selection:bg-primary/30 flex flex-col justify-center items-center">
+<!-- Deep Ambient Background Layer -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] opacity-70 mix-blend-screen animate-pulse"></div>
+<div class="absolute top-[40%] -left-[20%] w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[100px] opacity-50 mix-blend-screen"></div>
+<div class="absolute -bottom-[10%] right-[10%] w-[400px] h-[400px] bg-blue-900/30 rounded-full blur-[80px] opacity-60"></div>
+<!-- Grain Simulation Overlay -->
+<div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 32px 32px;"></div>
+</div>
+<!-- Mobile Frame Container -->
+<div class="relative w-full h-full max-w-[480px] flex flex-col z-10 glass-border shadow-2xl">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between px-6 pt-6 pb-2 z-50">
+<div class="flex items-center gap-3">
+<div class="relative group cursor-pointer">
+<div class="size-10 rounded-full bg-gray-700 overflow-hidden ring-2 ring-white/10 shadow-lg" data-alt="User profile picture with a smiling face" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBNGqGI2YeGIP50POnV096nm5Cb0WotfCd1bU7EB8K_5md779ZlIFKVnAkbtYH3a6q3G_v8N7XJ6ucFmYCX9UUi1NrXf58kvgXBryoL8j_uEdbcQoC7MdWWwo4TCa77xoMak39U90-AJnuOJnZ90MRssD7_qm5NZqRsU9t-fO_kUAVnAOpGfuSGarPK9BPYwD2NhapUMR4HVCOABXInN47UAYX8dr7oi7CwmZ7oZWxErWy8a3vjoIZIdRoEAqBFZzuNEWa44h-5MTg'); background-size: cover;"></div>
+<div class="absolute -bottom-0.5 -right-0.5 bg-green-500 size-3 rounded-full border-2 border-background-dark shadow-sm"></div>
+</div>
+</div>
+<!-- Central Brand/Location Pill -->
+<button class="glass-btn h-9 px-4 rounded-full flex items-center gap-2 group active:scale-95 transition-transform">
+<span class="text-sm font-semibold text-white/90 group-hover:text-white">New York, NY</span>
+<span class="material-symbols-outlined text-white/60 text-[18px]">expand_more</span>
+</button>
+<!-- Filter Icon -->
+<button class="glass-btn size-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all group">
+<span class="material-symbols-outlined text-white/80 group-hover:text-white transition-colors" style="font-size: 22px;">tune</span>
+</button>
+</header>
+<!-- Main Content: Card Stack -->
+<main class="flex-1 relative w-full px-4 py-2 flex flex-col justify-center items-center perspective-1000">
+<!-- Card 3 (Furthest Back) -->
+<div class="absolute top-8 w-[85%] h-[calc(100%-80px)] bg-gray-800/40 rounded-2xl border border-white/5 transform translate-y-[-24px] scale-[0.90] z-10 shadow-xl opacity-40 blur-[1px]"></div>
+<!-- Card 2 (Middle) -->
+<div class="absolute top-8 w-[90%] h-[calc(100%-80px)] bg-gray-700/60 rounded-2xl border border-white/5 transform translate-y-[-12px] scale-[0.95] z-20 shadow-xl opacity-70">
+<!-- Hint of image for realism -->
+<div class="w-full h-full rounded-2xl bg-cover bg-center opacity-30 mix-blend-overlay" data-alt="Blurred background of the next apartment card" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC_4zq6mLPpJdw_7hh6dC1M2dR3TND9-OIhmSkWzbWbj5ruywcUJrMu1pWY0SyCzla0UTWMo7_cn5lfA-VjAVz8iZt4FXkMeMQOAuUtdGKEVFKubWsdE8oDJq23dznnigiJOowud2Y3hLCM63RUfBVLrW55Z_MvUI64g25JZlyEkbC5ZtNABDyC2bei1HjK9ynMV0S_khX54QM-jo0vo2PZClXzuoIaPfiPyUQT_Fn9PGEZZRxyz8Up74S6jpTlEmz3lChhO3Sy660');"></div>
+</div>
+<!-- Card 1 (Front/Active) -->
+<div class="relative w-full h-[calc(100%-80px)] rounded-2xl overflow-hidden shadow-fluent border border-white/10 z-30 group bg-[#1a1a1a]">
+<!-- Main Image -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Modern studio apartment interior with floor to ceiling windows and wooden floors" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpZJM9LfgAZwsfLqwFpTbcGQIl1DvM0shOvXwuo9z9LMs0deeeAOaypONA7Tvl_8b3BHiVhc-h2zzgFuw_4O6GXMQr0Kv6ixL9gUIndrtVnzQBVHgOKpJtZzsto3ZX-CxTKWmrUHwR-x5GSIBgxnanaR6U0dHbOeXxaUUFadXz2hhIU5qynrwJEy55rrEF29CwrMXxB1fGAAyF3X5o-m89LJZjVm3GL0zsNuQvGSvdW4N0Y_8D8LT5MsdcWYFhc8rpsamt42QTtcY');">
+</div>
+<!-- Top Gradient for Readability -->
+<div class="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
+<!-- Verified Badge (Glassmorphism) -->
+<div class="absolute top-4 left-4 flex items-center gap-2 pr-4 pl-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/15 shadow-lg">
+<div class="bg-primary/20 rounded-full p-0.5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[16px] fill-1" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="text-xs font-bold text-white tracking-wide uppercase">Verified Student</span>
+</div>
+<!-- Bottom Information Overlay -->
+<div class="absolute inset-x-0 bottom-0 pt-24 pb-6 px-5 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col justify-end">
+<div class="flex items-end justify-between mb-2">
+<div class="flex flex-col">
+<span class="text-primary font-bold text-sm tracking-wider uppercase mb-1 drop-shadow-md">Available May 15</span>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-extrabold text-white tracking-tight drop-shadow-md">$1,250</span>
+<span class="text-lg text-white/80 font-medium">/mo</span>
+</div>
+</div>
+<div class="bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10">
+<span class="text-xs font-medium text-white">Studio</span>
+</div>
+</div>
+<h2 class="text-xl font-bold text-white leading-tight mb-3 drop-shadow-md">Sunny Studio in West Village</h2>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-white/90 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px] text-primary">location_on</span>
+<span class="truncate">W 4th St • 12 mins to NYU</span>
+</div>
+<div class="flex items-center gap-2 text-white/70 text-sm">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Utilities included • Furnished</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Buttons -->
+<div class="absolute -bottom-8 w-full flex items-center justify-center gap-10 z-50 pointer-events-auto">
+<!-- Pass Button -->
+<button class="group relative flex items-center justify-center size-16 rounded-full glass-btn shadow-lg hover:bg-red-500/10 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-red-400 text-[32px] group-hover:scale-110 transition-transform">close</span>
+</button>
+<!-- Like Button -->
+<button class="group relative flex items-center justify-center size-20 rounded-full bg-primary/20 backdrop-blur-xl border border-white/20 shadow-glow hover:bg-primary/30 active:scale-95 transition-all duration-200">
+<div class="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent opacity-50"></div>
+<span class="material-symbols-outlined text-white text-[38px] fill-1 group-hover:scale-110 transition-transform drop-shadow-lg" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+<!-- Super Like / More Info (Optional small button) -->
+<button class="group relative flex items-center justify-center size-14 rounded-full glass-btn shadow-lg hover:bg-white/10 active:scale-95 transition-all duration-200 translate-y-[-10px]">
+<span class="material-symbols-outlined text-yellow-400 text-[26px] fill-1 group-hover:scale-110 transition-transform">star</span>
+</button>
+</div>
+</main>
+<div class="h-12 w-full"></div> <!-- Spacer for FABs overlapping bottom nav -->
+<!-- Bottom Navigation -->
+<nav class="acrylic-panel h-[88px] w-full rounded-t-2xl flex items-start justify-between px-6 pt-4 pb-8 z-40 relative shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+<a class="flex flex-col items-center gap-1.5 w-16 group" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-primary text-[26px] fill-1 transition-transform group-hover:-translate-y-1" style="font-variation-settings: 'FILL' 1;">style</span>
+<span class="absolute -top-1 -right-1 size-2 bg-primary rounded-full"></span>
+</div>
+<span class="text-[10px] font-semibold text-primary">Discover</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 w-16 group" href="#">
+<span class="material-symbols-outlined text-white/50 text-[26px] group-hover:text-white transition-colors group-hover:-translate-y-1">search</span>
+<span class="text-[10px] font-medium text-white/50 group-hover:text-white transition-colors">Search</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 w-16 group" href="#">
+<span class="material-symbols-outlined text-white/50 text-[26px] group-hover:text-white transition-colors group-hover:-translate-y-1">chat_bubble</span>
+<span class="text-[10px] font-medium text-white/50 group-hover:text-white transition-colors">Chat</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 w-16 group" href="#">
+<span class="material-symbols-outlined text-white/50 text-[26px] group-hover:text-white transition-colors group-hover:-translate-y-1">person</span>
+<span class="text-[10px] font-medium text-white/50 group-hover:text-white transition-colors">Profile</span>
+</a>
+</nav>
+<!-- iOS Home Indicator Safe Area -->
+<div class="h-1 bg-transparent w-full absolute bottom-1 flex justify-center z-50 pointer-events-none">
+<div class="w-1/3 h-1 bg-white/20 rounded-full"></div>
+</div>
+</div>
+</body></html>

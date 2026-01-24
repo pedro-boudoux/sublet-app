@@ -4,6 +4,15 @@ import { CosmosClient } from "@azure/cosmos";
 // Initialize DB Client
 const client = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
 
+/**
+ * Fetches a list of candidate users for the discovery feed.
+ * 
+ * @param request - HTTP GET request
+ * @param request.query.limit - Max number of candidates to return (optional, default: 20)
+ * 
+ * @returns 200 - Array of user objects (candidates to swipe on)
+ * @returns 500 - Database connection error
+ */
 export async function getCandidates(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log(`Http function processed request for url "${request.url}"`);
 

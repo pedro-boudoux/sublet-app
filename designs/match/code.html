@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SubletConnect - Match Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0079d6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1a23",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Confetti positions for static aesthetic */
+        .confetti { position: absolute; opacity: 0.8; }
+        .c-1 { top: 20%; left: 15%; transform: rotate(15deg); }
+        .c-2 { top: 15%; right: 20%; transform: rotate(-30deg); }
+        .c-3 { bottom: 30%; left: 10%; transform: rotate(45deg); }
+        .c-4 { top: 40%; right: 10%; transform: rotate(-15deg); }
+        .c-5 { top: 10%; left: 50%; transform: rotate(60deg); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-dark font-display antialiased overflow-hidden">
+<!-- Screen Wrapper -->
+<div class="relative flex h-screen w-full flex-col overflow-hidden bg-background-dark">
+<!-- Underlying App Layer (Blurred Background Content) -->
+<!-- This simulates the screen the user was on before the match happened (e.g., browsing listings) -->
+<div class="absolute inset-0 z-0">
+<div class="h-full w-full bg-cover bg-center opacity-60" data-alt="Blurred view of a modern apartment listing in the background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDepl_xHQzkDRpM5zgpN0FpUWKzR1PCG7nlAMN9UZu4TyHFDaoQayueqMunTSIwuD7J3UHb99H-owFyEWQQ8iviNz21JrxgAN0aGW_Eqmagob6n4-C7ug0m0bAuQmSJCjSisUs74ok5Gqztkr8muGA2BPWQhLpaBm4yuw1T_PlDgtZ9aONkOloGx2QUPn-R8jgRIWbo-o-f5_PtqAjZKuyCw9k3dQosscKoCRB8wDAD3ZdxbUFQogudGl-WZn246MRbE0xEYvs6Nn8');">
+</div>
+<!-- Gradient Overlay for better text legibility if blur fails -->
+<div class="absolute inset-0 bg-gradient-to-b from-[#0f1a23]/60 via-[#0f1a23]/80 to-[#0f1a23]"></div>
+</div>
+<!-- The Acrylic Overlay (Modal) -->
+<div class="relative z-10 flex h-full w-full flex-col items-center justify-center px-6 bg-[#0f1a23]/80 backdrop-blur-xl">
+<!-- Confetti Elements (Decorative) -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<!-- Yellow ribbon -->
+<div class="confetti c-1">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBF24"></path>
+</svg>
+</div>
+<!-- Blue circle -->
+<div class="confetti c-2">
+<div class="w-4 h-4 rounded-full bg-blue-400"></div>
+</div>
+<!-- Pink square -->
+<div class="confetti c-3">
+<div class="w-3 h-3 bg-pink-500 rotate-12"></div>
+</div>
+<!-- Green squiggle -->
+<div class="confetti c-4">
+<svg fill="none" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#4ADE80"></path>
+</svg>
+</div>
+<!-- Purple triangle -->
+<div class="confetti c-5">
+<svg fill="#A78BFA" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2L2 22h20L12 2z"></path></svg>
+</div>
+</div>
+<!-- Avatars Section -->
+<div class="relative mb-10 flex items-center justify-center">
+<!-- Glow Effect behind avatars -->
+<div class="absolute inset-0 bg-primary/40 blur-[50px] rounded-full scale-125"></div>
+<div class="relative flex items-center">
+<!-- User Avatar -->
+<div class="relative z-20 h-32 w-32 rounded-full border-4 border-[#0f1a23] shadow-2xl overflow-hidden bg-[#20384b]">
+<img alt="Profile picture of the current user" class="h-full w-full object-cover" data-alt="Profile picture of the current user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDxlr3RNwSYNY06KOldM7HwB5ETmv7Kx18k_5CvJTpiDEqnMLTn2IzvXQXeVFphZJ0FR929FwFc2-ae8UaK5-qUFZPVw3VHhdVdnCYEnnKtyWKM_wszfmZnwxEEjnvoaljo4PkwcDH1hwmO9KvWZyvfLiQQLSzYLlP8Eik0mO0DK9b_HT_BPe4tiXGmQ0BQ-MVGwZBl8KsGv8sG2DTxuSGrzn_v3ENbXyOoLgrotj-4cajRAFxB1U87eiwQpiCLRjKQwIMh-vNe9g"/>
+</div>
+<!-- Match Avatar (Sublet Lister) -->
+<div class="relative z-10 -ml-8 h-32 w-32 rounded-full border-4 border-[#0f1a23] shadow-2xl overflow-hidden bg-[#20384b] opacity-90">
+<img alt="Profile picture of the matched sublet lister Sarah" class="h-full w-full object-cover" data-alt="Profile picture of the matched sublet lister Sarah" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5VH_Ke0IkJnQ15iNVcCZCBqWFMiVdHEYFGOxIFlp_Eq_K3rr5q13dw_MB2aiBzeh34CSED8IBK1wJxj4-gY3r7aSeWxWXTng2vaV7XOmZHUEBOpwtSHWDvla5gbk9K0zj4uq7XssyOK5WtrnJK6-OvCk6uzpBEQVPL8ac0BRDifSlyuDp1JxUyvP6e2Wb8B9o0nuxYgY5ugnQIiri9lAPSNOq2sKzi2U2P23fE5vGmwpeWT5DcyD7-lAFAr6Ja8TGTtAEedhDves"/>
+</div>
+<!-- Heart Badge Connector -->
+<div class="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary border-4 border-[#0f1a23] text-white shadow-lg animate-bounce">
+<span class="material-symbols-outlined text-[24px]">favorite</span>
+</div>
+</div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col items-center text-center space-y-3 mb-12 relative z-20">
+<h1 class="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
+                    It's a Match!
+                </h1>
+<p class="text-base font-medium text-gray-200/90 leading-relaxed max-w-[260px]">
+                    You and <span class="text-white font-bold">Sarah</span> are interested in the same lease.
+                </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex w-full max-w-[320px] flex-col gap-4 relative z-20">
+<!-- Primary Acrylic Button -->
+<button class="group relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary shadow-[0_8px_20px_rgba(0,121,214,0.3)] transition-transform hover:scale-[1.02] active:scale-[0.98]">
+<!-- Subtle shine effect -->
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<span class="material-symbols-outlined text-white">mail</span>
+<span class="text-lg font-bold text-white tracking-wide">Send Email</span>
+</button>
+<!-- Secondary Ghost Acrylic Button -->
+<button class="group flex h-14 w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-md transition-colors hover:bg-white/10 active:bg-white/15 active:scale-[0.98]">
+<span class="material-symbols-outlined text-gray-300 group-hover:text-white transition-colors">swipe</span>
+<span class="text-lg font-semibold text-gray-300 group-hover:text-white transition-colors">Keep Swiping</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>
