@@ -21,7 +21,7 @@ export function useUserListing(): UseUserListingResult {
   const { data, error, isLoading, mutate } = useSWR<ApiListing[]>(
     // Only fetch after hydration and when we have a userId
     hasHydrated && userId ? ['user-listing', userId] : null,
-    ([, ownerId]) => getListings({ ownerId }),
+    ([, ownerId]: [string, string]) => getListings({ ownerId }),
     {
       revalidateOnFocus: false,
       revalidateOnMount: true,

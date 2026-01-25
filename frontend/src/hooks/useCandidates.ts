@@ -6,6 +6,7 @@ interface UseCandidatesResult {
   candidates: (ApiUser | ApiListing)[];
   candidateType: 'users' | 'listings' | null;
   isLoading: boolean;
+  isValidating: boolean;
   isError: boolean;
   error: Error | undefined;
   mutate: () => void;
@@ -18,14 +19,15 @@ interface UseCandidatesResult {
 export function useCandidates(): UseCandidatesResult {
   const user = useStore((state) => state.user);
   const userId = user?.id;
+  const userMode = user?.mode;
 
-  const { data, error, isLoading, mutate } = useSWR<CandidatesResponse>(
-    userId ? ['candidates', userId] : null,
-    () => getCandidates(userId!, { limit: 20 }),
+  const { data, error, isLoading, isValidating, mutate } = useSWR<CandidatesResponse>(
+    // Include mode in key so it refetches when mode changes
+    userId && userMode ? ['candidates', userId, userMode] : null,
+    ([, id]: [string, string, string]) => getCandidates(id, { limit: 20 }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateIfStale: false,
     }
   );
 
@@ -33,6 +35,7 @@ export function useCandidates(): UseCandidatesResult {
     candidates: data?.candidates || [],
     candidateType: data?.type || null,
     isLoading,
+    isValidating,
     isError: !!error,
     error,
     mutate,

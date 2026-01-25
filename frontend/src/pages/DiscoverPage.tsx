@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, RefreshCw } from 'lucide-react';
+import { Layers, RefreshCw, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/layout/Header';
 import { CardStack, UserDetailModal, ListingDetailModal, type SwipeDirection } from '../components/discovery';
@@ -21,7 +21,7 @@ export function DiscoverPage() {
   const setCurrentMatch = useStore((state) => state.setCurrentMatch);
 
   // Fetch candidates from API
-  const { candidates, candidateType, isLoading: isFetchingCandidates, isError, error, mutate } = useCandidates();
+  const { candidates, candidateType, isLoading: isFetchingCandidates, isValidating, error, mutate } = useCandidates();
 
   // Local state
   const [cards, setCards] = useState<CardData[]>([]);
@@ -29,9 +29,44 @@ export function DiscoverPage() {
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [isSwipeLoading, setIsSwipeLoading] = useState(false);
 
+  // Track previous mode to detect mode changes
+  const prevModeRef = useRef(user?.mode);
+  const [isModeTransitioning, setIsModeTransitioning] = useState(false);
+  const [minimumLoadingTimeElapsed, setMinimumLoadingTimeElapsed] = useState(true);
+
   // Track if we've initialized cards to prevent infinite loops
   const hasInitialized = useRef(false);
   const lastCandidatesLength = useRef(-1);
+
+  // Detect mode changes and trigger smooth transition
+  useEffect(() => {
+    if (user?.mode && prevModeRef.current !== user.mode) {
+      prevModeRef.current = user.mode;
+      setIsModeTransitioning(true);
+      setMinimumLoadingTimeElapsed(false); // Reset for new transition
+      setMinimumLoadingTimeElapsed(false); // Reset for new transition
+      hasInitialized.current = false;
+      lastCandidatesLength.current = -1;
+      setCards([]);
+
+      // Start minimum loading time timer
+      const timer = setTimeout(() => {
+        setMinimumLoadingTimeElapsed(true);
+      }, 2500); // 2.5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [user?.mode, setCards]);
+
+  // Clear transition state when loading completes AND minimum time has passed
+  useEffect(() => {
+    if (isModeTransitioning && !isFetchingCandidates && !isValidating && minimumLoadingTimeElapsed) {
+      // Small delay for smoother animation
+      const timer = setTimeout(() => {
+        setIsModeTransitioning(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isModeTransitioning, isFetchingCandidates, isValidating, minimumLoadingTimeElapsed]);
 
   // Initialize cards from API candidates
   useEffect(() => {
@@ -169,8 +204,8 @@ export function DiscoverPage() {
     );
   }
 
-  // Loading state
-  if (isFetchingCandidates) {
+  // Loading state (initial load)
+  if (isFetchingCandidates && !isModeTransitioning) {
     return (
       <div className="flex flex-col h-full">
         <Header />
@@ -196,7 +231,7 @@ export function DiscoverPage() {
   }
 
   // Error state
-  if (isError) {
+  if (error) {
     return (
       <div className="flex flex-col h-full">
         <Header />
@@ -230,7 +265,7 @@ export function DiscoverPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <Header />
 
       {/* Refresh hint */}
@@ -244,14 +279,24 @@ export function DiscoverPage() {
         </button>
       </div>
 
-      {/* Card Stack */}
-      <div className="flex-1 overflow-hidden">
-        <CardStack
-          cards={cards}
-          onSwipe={handleSwipe}
-          onEmpty={handleEmpty}
-          onCardTap={handleCardTap}
-        />
+      {/* Main content area */}
+      <div className="flex-1 relative">
+        {/* Loading spinner for mode transition */}
+        {(isModeTransitioning || isValidating || !minimumLoadingTimeElapsed) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 transition-opacity duration-300 opacity-100">
+            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          </div>
+        )}
+
+        {/* Card Stack - hidden during transition */}
+        <div className={`absolute inset-0 transition-opacity duration-300 ${isModeTransitioning || isValidating || !minimumLoadingTimeElapsed ? 'opacity-0' : 'opacity-100'}`}>
+          <CardStack
+            cards={cards}
+            onSwipe={handleSwipe}
+            onEmpty={handleEmpty}
+            onCardTap={handleCardTap}
+          />
+        </div>
       </div>
 
       {/* Detail Modal - shows user details or listing details based on type */}
@@ -274,3 +319,6 @@ export function DiscoverPage() {
     </div>
   );
 }
+
+
+

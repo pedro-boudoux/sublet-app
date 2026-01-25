@@ -108,7 +108,13 @@ export function OnboardingPage() {
       setIsOnboarded(true);
 
       toast.success('Profile created successfully!');
-      navigate('/');
+      
+      // Navigate based on mode - offering users go to create listing first
+      if (mode === 'offering') {
+        navigate('/listings/create');
+      } else {
+        navigate('/');
+      }
 
     } catch (error) {
       console.error('Failed to create user:', error);
