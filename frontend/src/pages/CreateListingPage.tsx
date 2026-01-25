@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Camera, Loader2, Plus, Save } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Plus, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { useStore } from '../stores/useStore';
+import { useRef } from 'react';
 import { useUserListing } from '../hooks';
-import { createListing, updateListing, getListing, ApiError, type ListingType } from '../lib/api';
+import { createListing, updateListing, getListing, uploadListingImage, ApiError, type ListingType } from '../lib/api';
 import { OFFERING_TAGS } from '../constants/tagPairs';
 
 const listingTypeOptions = [
@@ -51,6 +52,7 @@ export function CreateListingPage() {
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check for existing listing to enforce 1-listing limit
   const { listing: existingListing, isLoading: checkingExisting, mutate: mutateUserListing } = useUserListing();
@@ -113,16 +115,30 @@ export function CreateListingPage() {
     );
   };
 
-  const addMockImage = () => {
-    // For demo purposes, add a placeholder image
-    const mockImages = [
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800',
-    ];
-    const randomImage = mockImages[images.length % mockImages.length];
-    setImages((prev) => [...prev, randomImage]);
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Size check (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      // Add to preview images immediately for UI
+      setImages((prev) => [...prev, base64String]);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSubmit = async () => {
@@ -139,6 +155,12 @@ export function CreateListingPage() {
     setIsSubmitting(true);
 
     try {
+      let targetListingId = listingId;
+
+      // Filter images: data: URLs are new uploads, http URLs are existing to keep
+      const imagesToKeep = images.filter(img => !img.startsWith('data:'));
+      const imagesToUpload = images.filter(img => img.startsWith('data:'));
+
       if (isEditing && listingId) {
         await updateListing(listingId, {
           title,
@@ -150,17 +172,16 @@ export function CreateListingPage() {
           description,
           amenities,
           lifestyleTags,
-          images,
+          images: imagesToKeep, // Update list to filtered set of existing images
         });
-        await mutateUserListing();
-        toast.success('Listing updated successfully!');
+        toast.success('Listing details updated!');
       } else if (!isEditing && existingListing) {
         // Fallback if they bypassed the redirect
         toast.error('You already have a listing');
         navigate(`/listings/${existingListing.id}/edit`);
         return;
       } else {
-        await createListing({
+        const newListing = await createListing({
           ownerId: user.id,
           title,
           price: parseInt(price),
@@ -171,11 +192,37 @@ export function CreateListingPage() {
           description,
           amenities,
           lifestyleTags,
-          images,
+          // New listing starts with no images (we upload after)
+          images: [],
         });
-        await mutateUserListing();
-        toast.success('Listing created successfully!');
+        targetListingId = newListing.id;
+        toast.success('Listing created!');
       }
+
+      // Upload new images
+      if (imagesToUpload.length > 0 && targetListingId) {
+        const toastId = toast.loading(`Uploading ${imagesToUpload.length} images...`);
+
+        try {
+          for (const base64Image of imagesToUpload) {
+            // Extract mime type from base64 string
+            const mimeType = base64Image.split(';')[0].split(':')[1];
+            const cleanBase64 = base64Image.split(',')[1];
+
+            await uploadListingImage({
+              listingId: targetListingId,
+              image: cleanBase64,
+              mimeType
+            });
+          }
+          toast.success('Images uploaded successfully!', { id: toastId });
+        } catch (uploadErr) {
+          console.error('Image upload failed', uploadErr);
+          toast.error('Some images failed to upload', { id: toastId });
+        }
+      }
+
+      await mutateUserListing();
 
       navigate('/saved');
     } catch (error) {
@@ -238,12 +285,25 @@ export function CreateListingPage() {
             <label className="block text-sm font-medium text-slate-300 mb-2">Photos</label>
             <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
               {images.map((img, idx) => (
-                <div key={idx} className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-white/5">
+                <div key={idx} className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-white/5 relative group">
                   <img src={img} alt={`Listing ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                className="hidden"
+                accept="image/*"
+              />
               <button
-                onClick={addMockImage}
+                onClick={() => fileInputRef.current?.click()}
                 className="flex-shrink-0 w-24 h-24 rounded-xl bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 <Camera className="h-6 w-6 text-white/40" />

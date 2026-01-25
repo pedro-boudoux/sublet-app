@@ -268,6 +268,30 @@ export async function deleteListing(listingId: string): Promise<void> {
   });
 }
 
+// ============ Image Upload API ============
+
+export interface UploadListingImageRequest {
+  listingId: string;
+  image: string; // Base64 encoded image data
+  mimeType: string;
+}
+
+export interface UploadListingImageResponse {
+  url: string;
+  blobName: string;
+  size: number;
+  mimeType: string;
+  listingId: string;
+  totalImages: number;
+}
+
+export async function uploadListingImage(data: UploadListingImageRequest): Promise<UploadListingImageResponse> {
+  return fetchApi<UploadListingImageResponse>('/upload/listing', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 // ============ Candidates API ============
 
 export async function getCandidates(
