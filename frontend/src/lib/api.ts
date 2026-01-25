@@ -292,6 +292,17 @@ export async function uploadListingImage(data: UploadListingImageRequest): Promi
   });
 }
 
+// ============ Locations API ============
+
+export interface LocationsResponse {
+  locations: string[];
+  count: number;
+}
+
+export async function getLocations(): Promise<LocationsResponse> {
+  return fetchApi<LocationsResponse>('/locations');
+}
+
 // ============ Candidates API ============
 
 export async function getCandidates(
@@ -311,6 +322,17 @@ export async function createSwipe(data: SwipeRequest): Promise<SwipeResponse> {
   return fetchApi<SwipeResponse>('/swipes', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+}
+
+export interface ResetSwipesResponse {
+  message: string;
+  deletedCount: number;
+}
+
+export async function resetSwipes(userId: string): Promise<ResetSwipesResponse> {
+  return fetchApi<ResetSwipesResponse>(`/swipes/reset?userId=${userId}`, {
+    method: 'DELETE',
   });
 }
 

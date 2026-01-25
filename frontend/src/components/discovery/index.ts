@@ -7,5 +7,6 @@ export { CardStack } from './CardStack';
 export type { CardData } from './CardStack';
 export { UserDetailModal } from './UserDetailModal';
 export { ListingDetailModal } from './ListingDetailModal';
+export { FilterModal } from './FilterModal';
 
 

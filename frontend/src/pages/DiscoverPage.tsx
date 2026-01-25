@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layers, RefreshCw, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/layout/Header';
-import { CardStack, UserDetailModal, ListingDetailModal, type SwipeDirection } from '../components/discovery';
+import { CardStack, UserDetailModal, ListingDetailModal, FilterModal, type SwipeDirection } from '../components/discovery';
 import { CardSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { useStore } from '../stores/useStore';
 import { useCandidates } from '../hooks/useCandidates';
@@ -28,6 +28,12 @@ export function DiscoverPage() {
   const [isEmpty, setIsEmpty] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [isSwipeLoading, setIsSwipeLoading] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Get filters from store
+  const selectedFilters = useStore((state) => state.selectedFilters);
+  const selectedListingTypes = useStore((state) => state.selectedListingTypes);
+  const selectedGenders = useStore((state) => state.selectedGenders);
 
   // Track previous mode to detect mode changes
   const prevModeRef = useRef(user?.mode);
@@ -83,7 +89,34 @@ export function DiscoverPage() {
 
     // Map candidates to card data with type
     const itemType = candidateType === 'listings' ? 'listing' : 'user';
-    const cardData = candidates.map((candidate) => ({
+    let filteredCandidates = candidates;
+
+    // Apply client-side filtering based on selectedFilters
+    if (selectedFilters.length > 0) {
+      filteredCandidates = filteredCandidates.filter((candidate) => {
+        const candidateTags = candidate.lifestyleTags || [];
+        // Check if candidate has ALL selected filter tags
+        return selectedFilters.every((filter) => candidateTags.includes(filter));
+      });
+    }
+
+    // Apply listing type filtering (only for listings)
+    if (selectedListingTypes.length > 0 && candidateType === 'listings') {
+      filteredCandidates = filteredCandidates.filter((candidate) => {
+        const listing = candidate as ApiListing;
+        return selectedListingTypes.includes(listing.type);
+      });
+    }
+
+    // Apply gender filtering (only for users - offerers filtering tenants)
+    if (selectedGenders.length > 0 && candidateType === 'users') {
+      filteredCandidates = filteredCandidates.filter((candidate) => {
+        const user = candidate as ApiUser;
+        return selectedGenders.includes(user.gender);
+      });
+    }
+
+    const cardData = filteredCandidates.map((candidate) => ({
       id: candidate.id,
       data: candidate,
       type: itemType as 'user' | 'listing',
@@ -93,7 +126,7 @@ export function DiscoverPage() {
     setIsEmpty(cardData.length === 0);
     hasInitialized.current = true;
     lastCandidatesLength.current = candidates.length;
-  }, [candidates, candidateType, isFetchingCandidates]);
+  }, [candidates, candidateType, isFetchingCandidates, selectedFilters, selectedListingTypes, selectedGenders]);
 
   // Helper to get display name
   const getDisplayName = (card: CardData) => {
@@ -189,7 +222,7 @@ export function DiscoverPage() {
   if (!user) {
     return (
       <div className="flex flex-col h-full">
-        <Header />
+        <Header onFilterClick={() => setIsFilterOpen(true)} />
         <EmptyState
           icon={Layers}
           title="Create your profile first"
@@ -200,6 +233,7 @@ export function DiscoverPage() {
           }}
           className="flex-1"
         />
+        <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       </div>
     );
   }
@@ -208,7 +242,7 @@ export function DiscoverPage() {
   if (isFetchingCandidates && !isModeTransitioning) {
     return (
       <div className="flex flex-col h-full">
-        <Header />
+        <Header onFilterClick={() => setIsFilterOpen(true)} />
         <div className="flex-1 flex flex-col px-4 py-2">
           <div className="relative flex-1">
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[85%] h-[calc(100%-120px)] rounded-2xl card-stack-1">
@@ -226,6 +260,7 @@ export function DiscoverPage() {
             <div className="h-20 w-20 rounded-full bg-white/5 animate-pulse" />
           </div>
         </div>
+        <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       </div>
     );
   }
@@ -234,13 +269,14 @@ export function DiscoverPage() {
   if (error) {
     return (
       <div className="flex flex-col h-full">
-        <Header />
+        <Header onFilterClick={() => setIsFilterOpen(true)} />
         <ErrorState
           title="Couldn't load candidates"
           message={error?.message || 'Failed to load. Please try again.'}
           onRetry={handleRefresh}
           className="flex-1"
         />
+        <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       </div>
     );
   }
@@ -249,7 +285,7 @@ export function DiscoverPage() {
   if (isEmpty || cards.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        <Header />
+        <Header onFilterClick={() => setIsFilterOpen(true)} />
         <EmptyState
           icon={Layers}
           title="No more candidates"
@@ -260,13 +296,14 @@ export function DiscoverPage() {
           }}
           className="flex-1"
         />
+        <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full relative">
-      <Header />
+      <Header onFilterClick={() => setIsFilterOpen(true)} />
 
       {/* Refresh hint */}
       <div className="flex justify-center py-1">
@@ -316,6 +353,9 @@ export function DiscoverPage() {
           onPass={() => handlePass(selectedCard)}
         />
       )}
+
+      {/* Filter Modal */}
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
     </div>
   );
 }

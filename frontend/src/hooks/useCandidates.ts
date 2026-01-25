@@ -20,11 +20,15 @@ export function useCandidates(): UseCandidatesResult {
   const user = useStore((state) => state.user);
   const userId = user?.id;
   const userMode = user?.mode;
+  const searchLocation = user?.searchLocation;
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<CandidatesResponse>(
-    // Include mode in key so it refetches when mode changes
-    userId && userMode ? ['candidates', userId, userMode] : null,
-    ([, id]: [string, string, string]) => getCandidates(id, { limit: 20 }),
+    // Include mode and location in key so it refetches when they change
+    userId && userMode ? ['candidates', userId, userMode, searchLocation || ''] : null,
+    ([, id, , location]: [string, string, string, string]) => getCandidates(id, {
+      limit: 20,
+      location: location || undefined
+    }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -50,6 +54,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner1@example.com',
     fullName: 'Sunny Studio Owner',
     age: 28,
+    gender: 'Other',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=1200&fit=crop',
@@ -65,6 +70,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner2@example.com',
     fullName: 'SoHo Apartment Owner',
     age: 32,
+    gender: 'Male',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=1200&fit=crop',
@@ -80,6 +86,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner3@example.com',
     fullName: 'Brooklyn Heights Host',
     age: 26,
+    gender: 'Female',
     searchLocation: 'Brooklyn, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=1200&fit=crop',
@@ -95,6 +102,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner4@example.com',
     fullName: 'East Village Lister',
     age: 30,
+    gender: 'Male',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=1200&fit=crop',
@@ -110,6 +118,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner5@example.com',
     fullName: 'Midtown Host',
     age: 35,
+    gender: 'Female',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=1200&fit=crop',

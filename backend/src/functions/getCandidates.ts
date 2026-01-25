@@ -79,9 +79,9 @@ export async function getCandidates(request: HttpRequest, context: InvocationCon
                 { name: "@userId", value: userId }
             ];
 
-            // Add location filter if provided
+            // Add location filter if provided (case-insensitive)
             if (location) {
-                listingsQuery += ` AND c.location = @location`;
+                listingsQuery += ` AND LOWER(c.location) = LOWER(@location)`;
                 parameters.push({ name: "@location", value: location });
             }
 
@@ -110,9 +110,9 @@ export async function getCandidates(request: HttpRequest, context: InvocationCon
                 { name: "@userId", value: userId }
             ];
 
-            // Add location filter if provided
+            // Add location filter if provided (case-insensitive)
             if (location) {
-                usersQuery += ` AND c.searchLocation = @location`;
+                usersQuery += ` AND LOWER(c.searchLocation) = LOWER(@location)`;
                 parameters.push({ name: "@location", value: location });
             }
 
