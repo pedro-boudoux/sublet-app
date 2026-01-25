@@ -74,16 +74,27 @@ export function DiscoverPage() {
     }
   }, [isModeTransitioning, isFetchingCandidates, isValidating, minimumLoadingTimeElapsed]);
 
+  // Detect filter changes and trigger refresh animation
+  const [isFiltering, setIsFiltering] = useState(false);
+  const prevFiltersRef = useRef(JSON.stringify({ selectedFilters, selectedListingTypes, selectedGenders }));
+
+  useEffect(() => {
+    const currentFilters = JSON.stringify({ selectedFilters, selectedListingTypes, selectedGenders });
+    if (prevFiltersRef.current !== currentFilters) {
+      prevFiltersRef.current = currentFilters;
+      setIsFiltering(true);
+      const timer = setTimeout(() => {
+        setIsFiltering(false);
+      }, 800); // 800ms "refresh" animation
+      return () => clearTimeout(timer);
+    }
+  }, [selectedFilters, selectedListingTypes, selectedGenders]);
+
   // Initialize cards from API candidates
   useEffect(() => {
     // Only update if loading finished and candidates changed
     if (isFetchingCandidates) {
       hasInitialized.current = false;
-      return;
-    }
-
-    // Check if candidates actually changed
-    if (hasInitialized.current && lastCandidatesLength.current === candidates.length) {
       return;
     }
 
@@ -319,14 +330,14 @@ export function DiscoverPage() {
       {/* Main content area */}
       <div className="flex-1 relative">
         {/* Loading spinner for mode transition */}
-        {(isModeTransitioning || isValidating || !minimumLoadingTimeElapsed) && (
+        {(isModeTransitioning || isValidating || !minimumLoadingTimeElapsed || isFiltering) && (
           <div className="absolute inset-0 flex items-center justify-center z-10 transition-opacity duration-300 opacity-100">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
           </div>
         )}
 
         {/* Card Stack - hidden during transition */}
-        <div className={`absolute inset-0 transition-opacity duration-300 ${isModeTransitioning || isValidating || !minimumLoadingTimeElapsed ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute inset-0 transition-opacity duration-300 ${isModeTransitioning || isValidating || !minimumLoadingTimeElapsed || isFiltering ? 'opacity-0' : 'opacity-100'}`}>
           <CardStack
             cards={cards}
             onSwipe={handleSwipe}

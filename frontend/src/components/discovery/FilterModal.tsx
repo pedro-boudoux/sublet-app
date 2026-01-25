@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, RotateCcw, Check, Home, Trash2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
@@ -37,19 +37,67 @@ const GENDERS: { value: string; label: string }[] = [
 
 export function FilterModal({ isOpen, onClose }: FilterModalProps) {
     const user = useStore((state) => state.user);
-    const selectedFilters = useStore((state) => state.selectedFilters);
-    const toggleFilter = useStore((state) => state.toggleFilter);
-    const selectedListingTypes = useStore((state) => state.selectedListingTypes);
-    const toggleListingType = useStore((state) => state.toggleListingType);
-    const selectedGenders = useStore((state) => state.selectedGenders);
-    const toggleGender = useStore((state) => state.toggleGender);
-    const clearFilters = useStore((state) => state.clearFilters);
+
+    // Store actions
+    const storeSetSelectedFilters = useStore((state) => state.setSelectedFilters);
+    const storeSetSelectedListingTypes = useStore((state) => state.setSelectedListingTypes);
+    const storeSetSelectedGenders = useStore((state) => state.setSelectedGenders);
+
+
+    // Initial values from store
+    const storeSelectedFilters = useStore((state) => state.selectedFilters);
+    const storeSelectedListingTypes = useStore((state) => state.selectedListingTypes);
+    const storeSelectedGenders = useStore((state) => state.selectedGenders);
+
+    // Local state for deferred application
+    const [localFilters, setLocalFilters] = useState<string[]>([]);
+    const [localListingTypes, setLocalListingTypes] = useState<string[]>([]);
+    const [localGenders, setLocalGenders] = useState<string[]>([]);
+
+    // Sync local state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setLocalFilters(storeSelectedFilters);
+            setLocalListingTypes(storeSelectedListingTypes);
+            setLocalGenders(storeSelectedGenders);
+        }
+    }, [isOpen, storeSelectedFilters, storeSelectedListingTypes, storeSelectedGenders]);
 
     if (!isOpen) return null;
 
+    // Local toggles
+    const toggleLocalFilter = (filter: string) => {
+        setLocalFilters(prev =>
+            prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
+        );
+    };
+
+    const toggleLocalListingType = (type: string) => {
+        setLocalListingTypes(prev =>
+            prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+        );
+    };
+
+    const toggleLocalGender = (gender: string) => {
+        setLocalGenders(prev =>
+            prev.includes(gender) ? prev.filter(g => g !== gender) : [...prev, gender]
+        );
+    };
+
+    const handleClear = () => {
+        setLocalFilters([]);
+        setLocalListingTypes([]);
+        setLocalGenders([]);
+    };
+
+    const handleApply = () => {
+        storeSetSelectedFilters(localFilters);
+        storeSetSelectedListingTypes(localListingTypes);
+        storeSetSelectedGenders(localGenders);
+        onClose();
+    };
+
     // Get tags based on user mode
-    // Looking users filter by offering tags (what listings have)
-    // Offering users filter by looking tags (what users have)
     const isLooking = user?.mode === 'looking';
 
     // Group tags by category
@@ -63,12 +111,8 @@ export function FilterModal({ isOpen, onClose }: FilterModalProps) {
         return acc;
     }, {} as Record<string, string[]>);
 
-    const handleApply = () => {
-        onClose();
-    };
-
-    const hasFilters = selectedFilters.length > 0 || selectedListingTypes.length > 0 || selectedGenders.length > 0;
-    const totalFilterCount = selectedFilters.length + selectedListingTypes.length + selectedGenders.length;
+    const hasFilters = localFilters.length > 0 || localListingTypes.length > 0 || localGenders.length > 0;
+    const totalFilterCount = localFilters.length + localListingTypes.length + localGenders.length;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-end justify-center">
@@ -108,12 +152,12 @@ export function FilterModal({ isOpen, onClose }: FilterModalProps) {
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 {LISTING_TYPES.map(({ value, label }) => {
-                                    const isSelected = selectedListingTypes.includes(value);
+                                    const isSelected = localListingTypes.includes(value);
                                     return (
                                         <Chip
                                             key={value}
                                             selected={isSelected}
-                                            onClick={() => toggleListingType(value)}
+                                            onClick={() => toggleLocalListingType(value)}
                                             className="cursor-pointer transition-all duration-200"
                                         >
                                             {isSelected && <Check className="h-3 w-3 mr-1" />}
@@ -134,12 +178,12 @@ export function FilterModal({ isOpen, onClose }: FilterModalProps) {
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 {GENDERS.map(({ value, label }) => {
-                                    const isSelected = selectedGenders.includes(value);
+                                    const isSelected = localGenders.includes(value);
                                     return (
                                         <Chip
                                             key={value}
                                             selected={isSelected}
-                                            onClick={() => toggleGender(value)}
+                                            onClick={() => toggleLocalGender(value)}
                                             className="cursor-pointer transition-all duration-200"
                                         >
                                             {isSelected && <Check className="h-3 w-3 mr-1" />}
@@ -163,12 +207,12 @@ export function FilterModal({ isOpen, onClose }: FilterModalProps) {
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {tags.map((tag) => {
-                                        const isSelected = selectedFilters.includes(tag);
+                                        const isSelected = localFilters.includes(tag);
                                         return (
                                             <Chip
                                                 key={tag}
                                                 selected={isSelected}
-                                                onClick={() => toggleFilter(tag)}
+                                                onClick={() => toggleLocalFilter(tag)}
                                                 className="cursor-pointer transition-all duration-200"
                                             >
                                                 {isSelected && <Check className="h-3 w-3 mr-1" />}
@@ -189,7 +233,7 @@ export function FilterModal({ isOpen, onClose }: FilterModalProps) {
                         <Button
                             variant="ghost"
                             className="flex-1"
-                            onClick={clearFilters}
+                            onClick={handleClear}
                             disabled={!hasFilters}
                         >
                             <RotateCcw className="h-4 w-4 mr-2" />

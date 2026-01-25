@@ -24,8 +24,10 @@ interface AppState {
   setSelectedFilters: (filters: string[]) => void;
   toggleFilter: (filter: string) => void;
   selectedListingTypes: string[];
+  setSelectedListingTypes: (types: string[]) => void;
   toggleListingType: (type: string) => void;
   selectedGenders: string[];
+  setSelectedGenders: (genders: string[]) => void;
   toggleGender: (gender: string) => void;
   clearFilters: () => void;
 
@@ -65,12 +67,14 @@ export const useStore = create<AppState>()(
           : [...state.selectedFilters, filter],
       })),
       selectedListingTypes: [],
+      setSelectedListingTypes: (selectedListingTypes) => set({ selectedListingTypes }),
       toggleListingType: (type) => set((state) => ({
         selectedListingTypes: state.selectedListingTypes.includes(type)
           ? state.selectedListingTypes.filter((t) => t !== type)
           : [...state.selectedListingTypes, type],
       })),
       selectedGenders: [],
+      setSelectedGenders: (selectedGenders) => set({ selectedGenders }),
       toggleGender: (gender) => set((state) => ({
         selectedGenders: state.selectedGenders.includes(gender)
           ? state.selectedGenders.filter((g) => g !== gender)
