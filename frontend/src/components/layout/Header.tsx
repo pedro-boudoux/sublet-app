@@ -40,9 +40,11 @@ export function Header({ onFilterClick }: HeaderProps) {
     <header data-tauri-drag-region className="flex items-center justify-between px-6 pt-6 pb-2 z-50">
       {/* App Logo and Name - Left side */}
       <div className="flex items-center gap-1.5 w-24">
-        <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-sm">S</span>
-        </div>
+        <img
+          src="/logo.png"
+          alt="App Logo"
+          className="h-7 w-7 rounded-lg object-cover shadow-lg"
+        />
         <span className="text-sm font-semibold text-white tracking-tight">Sublety</span>
       </div>
 
