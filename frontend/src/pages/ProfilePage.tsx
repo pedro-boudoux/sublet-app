@@ -361,16 +361,23 @@ export function ProfilePage() {
             )}
           </Button>
         ) : (
-          <Button
-            variant="secondary"
-            onClick={handleLogout}
-            className="mt-4"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>Sign Out</span>
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleLogout}
+              className="mt-4"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sign Out</span>
+            </Button>
+            <div className="flex justify-center mt-2">
+              <span className="text-xs text-white/40 font-mono select-all">
+                User ID: {user.id}
+              </span>
+            </div>
+          </>
         )}
       </div>
-    </div>
+    </div >
   );
 }

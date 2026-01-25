@@ -166,6 +166,9 @@ export function DiscoverPage() {
 
       // Check if it's a match
       if (result.matched) {
+        // Show immediate feedback
+        toast.success('Match found!', { icon: '🔥', duration: 3000 });
+
         if (card.type === 'user') {
           setCurrentMatch({
             matchedUser: card.data as ApiUser,

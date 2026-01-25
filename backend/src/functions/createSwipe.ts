@@ -125,6 +125,53 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
                     await matchesContainer.items.create(match);
                     matched = true;
                     context.log(`Match created: ${matchId}`);
+                } else {
+                    // Check if the other user liked any of THIS user's listings
+                    // (Case: Host swipes Seeker, checking if Seeker liked Host's Listing)
+
+                    // 1. Get all listings owned by swiper (Host)
+                    const myListingQuery = {
+                        query: "SELECT c.id FROM c WHERE c.ownerId = @ownerId",
+                        parameters: [{ name: "@ownerId", value: body.swiperId }] // swiperId is Host identityId
+                    };
+                    const { resources: myListings } = await listingsContainer.items.query(myListingQuery).fetchAll();
+
+                    if (myListings.length > 0) {
+                        const listingIds = myListings.map(l => l.id);
+
+                        // 2. Check if swiped user (Seeker) liked ANY of these listings
+                        // usage of ARRAY_CONTAINS or IN clause
+                        const idsList = listingIds.map(id => `'${id}'`).join(",");
+                        const listingSwipeQuery = `
+                            SELECT * FROM c 
+                            WHERE c.swiperId = '${body.swipedId}' 
+                            AND c.swipedType = 'listing' 
+                            AND ARRAY_CONTAINS([${idsList}], c.swipedId)
+                            AND (c.direction = 'like' OR c.direction = 'superlike')
+                        `;
+
+                        // Be careful with query length/parameters, but for small listing count this is fine.
+                        // Or iterate if safer.
+
+                        const { resources: listingSwipes } = await swipesContainer.items.query(listingSwipeQuery).fetchAll();
+
+                        if (listingSwipes.length > 0) {
+                            // Match! Seeker liked one of Host's listings
+                            matchId = uuidv4();
+                            const matchedListingId = listingSwipes[0].swipedId;
+                            const match = {
+                                id: matchId,
+                                type: "user-listing",
+                                userIds: [body.swiperId, body.swipedId].sort(),
+                                listingId: matchedListingId,
+                                createdAt: new Date().toISOString()
+                            };
+
+                            await matchesContainer.items.create(match);
+                            matched = true;
+                            context.log(`Match created (host-listing): ${matchId}`);
+                        }
+                    }
                 }
             } else {
                 // Listing swipe: check if listing owner has liked this user
