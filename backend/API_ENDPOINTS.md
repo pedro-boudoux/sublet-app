@@ -53,6 +53,7 @@ Use this as a reference when building the frontend.
 | Method   | Endpoint                 | Purpose                        |
 |----------|--------------------------|--------------------------------|
 | `POST`   | `/api/listings`          | Create a new sublet listing    |
+| `GET`    | `/api/listings`          | Get multiple listings (ownerId) |
 | `GET`    | `/api/listings/:listingId`| Get a specific listing         |
 | `PATCH`  | `/api/listings/:listingId`| Update a listing               |
 | `DELETE` | `/api/listings/:listingId`| Delete a listing               |

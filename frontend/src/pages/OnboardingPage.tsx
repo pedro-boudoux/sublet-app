@@ -17,6 +17,12 @@ const modeOptions = [
   { value: 'offering', label: 'Offering Place' },
 ];
 
+const genderOptions = [
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+  { value: 'Other', label: 'Other' },
+];
+
 // Steps for onboarding
 type Step = 'mode' | 'basics' | 'bio' | 'lifestyle' | 'complete';
 
@@ -32,6 +38,7 @@ export function OnboardingPage() {
   const [mode, setMode] = useState<'looking' | 'offering'>(user?.mode || 'looking');
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [age, setAge] = useState(user?.age?.toString() || '');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>(user?.gender || 'Male');
   const [location, setLocation] = useState(user?.searchLocation || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(user?.lifestyleTags || []);
@@ -86,6 +93,7 @@ export function OnboardingPage() {
         email,
         fullName,
         age: parseInt(age) || 25,
+        gender,
         searchLocation: location,
         mode,
         profilePicture,
@@ -230,6 +238,26 @@ export function OnboardingPage() {
                   max="99"
                   className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Gender</label>
+                <div className="flex gap-2">
+                  {genderOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setGender(opt.value as any)}
+                      className={cn(
+                        'flex-1 h-12 rounded-xl border font-medium transition-all',
+                        gender === opt.value
+                          ? 'bg-primary border-primary text-white'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>

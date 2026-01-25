@@ -19,6 +19,10 @@ interface AppState {
   isOnboarded: boolean;
   setIsOnboarded: (onboarded: boolean) => void;
   
+  // Hydration state
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+  
   // Clear all user data (logout)
   clearUser: () => void;
 }
@@ -42,6 +46,10 @@ export const useStore = create<AppState>()(
       isOnboarded: false,
       setIsOnboarded: (isOnboarded) => set({ isOnboarded }),
       
+      // Hydration
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      
       // Clear user data
       clearUser: () => set({ user: null, isOnboarded: false, currentMatch: null }),
     }),
@@ -51,6 +59,9 @@ export const useStore = create<AppState>()(
         user: state.user, 
         isOnboarded: state.isOnboarded 
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

@@ -35,6 +35,7 @@ export interface ApiUser {
   email: string;
   fullName: string;
   age: number;
+  gender: 'Male' | 'Female' | 'Other';
   searchLocation: string;
   mode: 'looking' | 'offering';
   profilePicture: string;
@@ -51,6 +52,7 @@ export interface CreateUserRequest {
   email: string;
   fullName: string;
   age: number;
+  gender: 'Male' | 'Female' | 'Other';
   searchLocation: string;
   mode: 'looking' | 'offering';
   profilePicture?: string;
@@ -61,6 +63,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   fullName?: string;
   age?: number;
+  gender?: 'Male' | 'Female' | 'Other';
   searchLocation?: string;
   mode?: 'looking' | 'offering';
   profilePicture?: string;
@@ -241,6 +244,13 @@ export async function createListing(data: CreateListingRequest): Promise<ApiList
   });
 }
 
+export async function getListings(filters?: { ownerId?: string }): Promise<ApiListing[]> {
+  const params = new URLSearchParams();
+  if (filters?.ownerId) params.append('ownerId', filters.ownerId);
+
+  return fetchApi<ApiListing[]>(`/listings?${params}`);
+}
+
 export async function getListing(listingId: string): Promise<ApiListing> {
   return fetchApi<ApiListing>(`/listings/${listingId}`);
 }
@@ -289,3 +299,32 @@ export async function getMatches(userId: string): Promise<MatchesResponse> {
 export async function getMatch(matchId: string): Promise<Match> {
   return fetchApi<Match>(`/matches/${matchId}`);
 }
+
+// ============ Saved Listings API ============
+
+export interface SavedListing extends ApiListing {
+  savedAt: string;
+}
+
+export interface SavedListingsResponse {
+  savedListings: SavedListing[];
+  count: number;
+}
+
+export async function saveListing(userId: string, listingId: string): Promise<{ id: string; listingId: string; savedAt: string }> {
+  return fetchApi('/saved', {
+    method: 'POST',
+    body: JSON.stringify({ userId, listingId }),
+  });
+}
+
+export async function getSavedListings(userId: string): Promise<SavedListingsResponse> {
+  return fetchApi<SavedListingsResponse>(`/saved?userId=${userId}`);
+}
+
+export async function unsaveListing(userId: string, listingId: string): Promise<void> {
+  await fetchApi(`/saved/${listingId}?userId=${userId}`, {
+    method: 'DELETE',
+  });
+}
+

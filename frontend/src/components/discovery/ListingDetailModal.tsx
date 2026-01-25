@@ -1,8 +1,13 @@
-import { X, MapPin, Check, Calendar, Home, DollarSign } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, MapPin, Check, Calendar, Home, DollarSign, Bookmark } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { Badge, VerifiedBadge } from '../ui/Badge';
 import { formatPrice, formatDate, cn } from '../../lib/utils';
 import type { ApiListing } from '../../lib/api';
+import { saveListing, unsaveListing } from '../../lib/api';
+import { useStore } from '../../stores/useStore';
+import { useSavedListings } from '../../hooks';
 
 interface ListingDetailModalProps {
   listing: ApiListing;
@@ -17,6 +22,33 @@ export function ListingDetailModal({
   onLike,
   onPass
 }: ListingDetailModalProps) {
+  const user = useStore((state) => state.user);
+  const { savedListings, mutate: mutateSaved } = useSavedListings();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const isSaved = useMemo(() => {
+    return savedListings.some(l => l.id === listing.id);
+  }, [savedListings, listing.id]);
+
+  const handleToggleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await unsaveListing(user.id, listing.id);
+        toast.success('Removed from saved');
+      } else {
+        await saveListing(user.id, listing.id);
+        toast.success('Listing saved');
+      }
+      mutateSaved();
+    } catch (error) {
+      toast.error(isSaved ? 'Failed to unsave' : 'Failed to save listing');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[90] flex flex-col">
       {/* Backdrop */}
@@ -44,9 +76,22 @@ export function ListingDetailModal({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors z-20"
           >
             <X className="h-5 w-5" />
+          </button>
+
+          {/* Save button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleToggleSave(); }}
+            disabled={isSaving}
+            className="absolute top-4 right-16 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors z-20"
+          >
+            {isSaving ? (
+              <div className="h-4 w-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Bookmark className={cn("h-5 w-5 transition-colors", isSaved && "fill-primary text-primary")} />
+            )}
           </button>
 
           {/* Verified Badge */}

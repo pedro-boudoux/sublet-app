@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Loader2, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Camera, Loader2, Plus, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { useStore } from '../stores/useStore';
-import { createListing, ApiError, type ListingType } from '../lib/api';
+import { useUserListing } from '../hooks';
+import { createListing, updateListing, getListing, ApiError, type ListingType } from '../lib/api';
 import { OFFERING_TAGS } from '../constants/tagPairs';
 
 const listingTypeOptions = [
@@ -33,6 +34,8 @@ const AMENITIES = [
 
 export function CreateListingPage() {
   const navigate = useNavigate();
+  const { listingId } = useParams();
+  const isEditing = !!listingId;
   const user = useStore((state) => state.user);
 
   // Form state
@@ -47,6 +50,56 @@ export function CreateListingPage() {
   const [lifestyleTags, setLifestyleTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check for existing listing to enforce 1-listing limit
+  const { listing: existingListing, isLoading: checkingExisting, mutate: mutateUserListing } = useUserListing();
+
+  // Redirect if trying to create but already have a listing
+  useEffect(() => {
+    if (!isEditing && existingListing && !checkingExisting) {
+      toast('Redirecting to your existing listing...');
+      navigate(`/listings/${existingListing.id}/edit`, { replace: true });
+    }
+  }, [isEditing, existingListing, checkingExisting, navigate]);
+
+  // Fetch listing data if editing
+  useEffect(() => {
+    if (!listingId) return;
+
+    const fetchListing = async () => {
+      setIsLoading(true);
+      try {
+        const listing = await getListing(listingId);
+        if (listing.ownerId !== user?.id) {
+          toast.error('You can only edit your own listings');
+          navigate('/saved');
+          return;
+        }
+
+        setTitle(listing.title);
+        setPrice(listing.price.toString());
+        setLocation(listing.location);
+        setAvailableDate(listing.availableDate.split('T')[0]); // Ensure YYYY-MM-DD
+        setListingType(listing.type);
+        setDistanceTo(listing.distanceTo || '');
+        setDescription(listing.description || '');
+        setAmenities(listing.amenities || []);
+        setLifestyleTags(listing.lifestyleTags || []);
+        setImages(listing.images || []);
+      } catch (error) {
+        console.error('Failed to fetch listing:', error);
+        toast.error('Failed to load listing details');
+        navigate('/saved');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchListing();
+    }
+  }, [listingId, user, navigate]);
 
   const toggleAmenity = (amenity: string) => {
     setAmenities((prev) =>
@@ -86,21 +139,44 @@ export function CreateListingPage() {
     setIsSubmitting(true);
 
     try {
-      await createListing({
-        ownerId: user.id,
-        title,
-        price: parseInt(price),
-        location,
-        availableDate,
-        type: listingType,
-        distanceTo,
-        description,
-        amenities,
-        lifestyleTags,
-        images,
-      });
+      if (isEditing && listingId) {
+        await updateListing(listingId, {
+          title,
+          price: parseInt(price),
+          location,
+          availableDate,
+          type: listingType,
+          distanceTo,
+          description,
+          amenities,
+          lifestyleTags,
+          images,
+        });
+        await mutateUserListing();
+        toast.success('Listing updated successfully!');
+      } else if (!isEditing && existingListing) {
+        // Fallback if they bypassed the redirect
+        toast.error('You already have a listing');
+        navigate(`/listings/${existingListing.id}/edit`);
+        return;
+      } else {
+        await createListing({
+          ownerId: user.id,
+          title,
+          price: parseInt(price),
+          location,
+          availableDate,
+          type: listingType,
+          distanceTo,
+          description,
+          amenities,
+          lifestyleTags,
+          images,
+        });
+        await mutateUserListing();
+        toast.success('Listing created successfully!');
+      }
 
-      toast.success('Listing created successfully!');
       navigate('/saved');
     } catch (error) {
       console.error('Failed to create listing:', error);
@@ -122,15 +198,23 @@ export function CreateListingPage() {
             <ArrowLeft className="h-6 w-6" />
           </Button>
           <h2 className="text-white text-lg font-semibold">Create Listing</h2>
-          <div className="w-10" />
+          <div className="w-10"></div>
         </div>
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="text-center text-white/60">
             <p className="text-lg font-medium mb-2">Switch to Offering Mode</p>
-            <p className="text-sm mb-4">You need to be in offering mode to create listings</p>
+            <p className="text-sm mb-4">You need to be in offering mode to {isEditing ? 'edit' : 'create'} listings</p>
             <Button onClick={() => navigate('/profile')}>Go to Profile</Button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-[#0f1a23] items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -142,7 +226,7 @@ export function CreateListingPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h2 className="text-white text-lg font-semibold">Create Listing</h2>
+        <h2 className="text-white text-lg font-semibold">{isEditing ? 'Edit Listing' : 'Create Listing'}</h2>
         <div className="w-10" />
       </div>
 
@@ -293,7 +377,12 @@ export function CreateListingPage() {
           {isSubmitting ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Creating...</span>
+              <span>{isEditing ? 'Updating...' : 'Creating...'}</span>
+            </>
+          ) : isEditing ? (
+            <>
+              <Save className="h-5 w-5" />
+              <span>Update Listing</span>
             </>
           ) : (
             <>

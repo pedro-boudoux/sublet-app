@@ -10,6 +10,7 @@ const container = database.container("users");
 interface UpdateUserRequest {
     fullName?: string;
     age?: number;
+    gender?: 'Male' | 'Female' | 'Other';
     searchLocation?: string;
     mode?: "looking" | "offering";
     profilePicture?: string;
@@ -55,6 +56,14 @@ export async function updateUser(request: HttpRequest, context: InvocationContex
             return {
                 status: 400,
                 jsonBody: { error: "Invalid mode. Must be 'looking' or 'offering'" }
+            };
+        }
+
+        // Validate gender if provided
+        if (updates.gender && !["Male", "Female", "Other"].includes(updates.gender)) {
+            return {
+                status: 400,
+                jsonBody: { error: "Invalid gender. Must be 'Male', 'Female', or 'Other'" }
             };
         }
 

@@ -45,8 +45,13 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Create Listing (protected, requires onboarding) */}
+          {/* Create/Edit Listing (protected) */}
           <Route path="/listings/create" element={
+            <ProtectedRoute>
+              <CreateListingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/listings/:listingId/edit" element={
             <ProtectedRoute>
               <CreateListingPage />
             </ProtectedRoute>
