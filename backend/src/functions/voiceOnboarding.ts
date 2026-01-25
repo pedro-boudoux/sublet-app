@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 interface ExtractedProfile {
   fullName: string | null;
   age: number | null;
+  gender: 'Male' | 'Female' | 'Other' | null;
   searchLocation: string | null;
   mode: 'looking' | 'offering' | null;
   bio: string;
@@ -22,17 +23,19 @@ const SYSTEM_INSTRUCTION = `Extract profile information from this transcription.
 {
   "fullName": "extracted name or null",
   "age": extracted_number_or_null,
+  "gender": "Male" or "Female" or "Other" or null,
   "searchLocation": "City, XX format (e.g. Oshawa, ON or Austin, TX) or null",
   "mode": "looking" or "offering" or null,
   "bio": "2-3 sentence summary",
   "lifestyleTags": ["matched tags from list"]
 }
 
-IMPORTANT: searchLocation must ALWAYS be formatted as "City, XX" where XX is the 2-letter state/province code (e.g. "Toronto, ON", "New York, NY", "Vancouver, BC").
+IMPORTANT: 
+- searchLocation must ALWAYS be formatted as "City, XX" where XX is the 2-letter state/province code (e.g. "Toronto, ON", "New York, NY", "Vancouver, BC").
+- gender should be inferred from context clues, name, or pronouns used. If unclear, set to null.
 
-Available lifestyle tags: Non-Smoker, Social Drinker, Early Bird, Night Owl, 
-Pet Friendly, Dog Lover, Cat Lover, Very Clean, Vegetarian, Vegan, 
-Works from Home, Student, Professional, Quiet, Social
+Available lifestyle tags: Non-Smoker, Very Clean, Social Drinker, Dog Lover, Cat Lover, 
+Pet Friendly, Early Bird, Night Owl, Works from Home, Quiet, Social, Student, Professional
 
 Bio is first-person perspective.`;
 

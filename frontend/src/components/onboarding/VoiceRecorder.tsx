@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 interface ExtractedProfile {
   fullName: string | null;
   age: number | null;
+  gender: 'Male' | 'Female' | 'Other' | null;
   searchLocation: string | null;
   mode: 'looking' | 'offering' | null;
   bio: string;

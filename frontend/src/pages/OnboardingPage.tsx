@@ -57,6 +57,7 @@ export function OnboardingPage() {
     profile: {
       fullName: string | null;
       age: number | null;
+      gender: 'Male' | 'Female' | 'Other' | null;
       searchLocation: string | null;
       mode: 'looking' | 'offering' | null;
       bio: string;
@@ -67,6 +68,7 @@ export function OnboardingPage() {
     // Populate form fields with extracted data
     if (profile.fullName) setFullName(profile.fullName);
     if (profile.age) setAge(profile.age.toString());
+    if (profile.gender) setGender(profile.gender);
     if (profile.searchLocation) setLocation(profile.searchLocation);
     if (profile.mode) setMode(profile.mode);
     if (profile.bio) setBio(profile.bio);
