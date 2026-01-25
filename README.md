@@ -3,7 +3,7 @@
 > **Tinder for Sublets.** Match by lifestyle, not just price.
 > Powered by **Tauri**, **Azure**, **Gemini**, and **ElevenLabs**.
 
-![Project Banner](https://via.placeholder.com/1200x400?text=Sublety+Banner+Here)
+![Project Banner](sublety_banner.png)
 
 ## 💡 The Problem
 Finding a sublet—or someone to fill your room—is a nightmare of unformatted Facebook Marketplace posts and sketchy DMs. Most platforms filter by price and location, but ignore the friction points of living with someone: **Lifestyle Compatibility**.
