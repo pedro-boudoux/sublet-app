@@ -1,0 +1,18 @@
+meta {
+  name: get-listings
+  type: http
+  seq: 19
+}
+
+get {
+  url: http://localhost:7071/api/listings
+  body: none
+  auth: none
+}
+
+docs {
+  # Get Listings (All)
+  
+  Retrieves a paginated/filtered list of listings.
+  (Note: get-candidates is for swiping, this is for general browsing or admin)
+}

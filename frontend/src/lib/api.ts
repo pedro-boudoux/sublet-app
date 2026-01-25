@@ -292,6 +292,27 @@ export async function uploadListingImage(data: UploadListingImageRequest): Promi
   });
 }
 
+// Profile Image Upload
+export interface UploadProfileImageRequest {
+  image: string; // Base64 encoded image data
+  mimeType: string;
+  fileName?: string;
+}
+
+export interface UploadProfileImageResponse {
+  url: string;
+  blobName: string;
+  size: number;
+  mimeType: string;
+}
+
+export async function uploadProfileImage(data: UploadProfileImageRequest): Promise<UploadProfileImageResponse> {
+  return fetchApi<UploadProfileImageResponse>('/upload/profile', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 // ============ Locations API ============
 
 export interface LocationsResponse {
@@ -344,6 +365,38 @@ export async function getMatches(userId: string): Promise<MatchesResponse> {
 
 export async function getMatch(matchId: string): Promise<Match> {
   return fetchApi<Match>(`/matches/${matchId}`);
+}
+
+// ============ Messages API ============
+
+export interface Message {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface MessagesResponse {
+  messages: Message[];
+  count: number;
+}
+
+export async function getMessages(matchId: string, userId: string): Promise<MessagesResponse> {
+  return fetchApi<MessagesResponse>(`/messages/${matchId}?userId=${userId}`);
+}
+
+export interface SendMessageRequest {
+  matchId: string;
+  senderId: string;
+  content: string;
+}
+
+export async function sendMessage(data: SendMessageRequest): Promise<Message> {
+  return fetchApi<Message>('/messages', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 // ============ Saved Listings API ============

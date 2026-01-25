@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Pencil, LogOut, Save, X, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ArrowLeft, Pencil, LogOut, Save, X, Loader2, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
@@ -8,7 +8,7 @@ import { Chip } from '../components/ui/Chip';
 import { ProfileHeader, AboutSection, LifestyleSection, SocialSection } from '../components/profile';
 import { useAuthContext } from '../components/auth';
 import { useStore } from '../stores/useStore';
-import { updateUser, ApiError } from '../lib/api';
+import { updateUser, uploadProfileImage, ApiError } from '../lib/api';
 import { LOOKING_TAGS } from '../constants/tagPairs';
 
 const modeOptions = [
@@ -34,6 +34,9 @@ export function ProfilePage() {
   const [editBio, setEditBio] = useState(user?.bio || '');
   const [editTags, setEditTags] = useState<string[]>(user?.lifestyleTags || []);
   const [editMode, setEditMode] = useState<'looking' | 'offering'>(user?.mode || 'looking');
+  const [editProfilePicture, setEditProfilePicture] = useState(user?.profilePicture || '');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If no user, redirect to onboarding
   if (!user) {
@@ -69,7 +72,61 @@ export function ProfilePage() {
     setEditBio(user.bio);
     setEditTags(user.lifestyleTags || []);
     setEditMode(user.mode);
+    setEditProfilePicture(user.profilePicture || '');
     setIsEditing(true);
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove data URL prefix to get pure base64
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64 = await base64Promise;
+
+      // Upload to server
+      const response = await uploadProfileImage({
+        image: base64,
+        mimeType: file.type,
+        fileName: file.name,
+      });
+
+      setEditProfilePicture(response.url);
+      toast.success('Image uploaded!');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const cancelEditing = () => {
@@ -93,6 +150,7 @@ export function ProfilePage() {
         bio: editBio,
         lifestyleTags: editTags,
         mode: editMode,
+        profilePicture: editProfilePicture,
       });
 
       setUser(updatedUser);
@@ -157,16 +215,36 @@ export function ProfilePage() {
         {/* Profile Header */}
         {isEditing ? (
           <div className="flex flex-col items-center gap-4">
-            {/* Avatar (non-editable for now) */}
-            <div className="h-24 w-24 rounded-full overflow-hidden bg-white/10 border-2 border-primary/50">
-              {user.profilePicture ? (
-                <img src={user.profilePicture} alt={user.fullName} className="w-full h-full object-cover" />
+            {/* Avatar - clickable to upload */}
+            <div
+              className="relative h-24 w-24 rounded-full overflow-hidden bg-white/10 border-2 border-primary/50 cursor-pointer group"
+              onClick={handleImageClick}
+            >
+              {isUploadingImage ? (
+                <div className="w-full h-full flex items-center justify-center bg-black/50">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : editProfilePicture ? (
+                <img src={editProfilePicture} alt={editFullName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-3xl text-white/50">
-                  {user.fullName?.[0] || '?'}
+                  {editFullName?.[0] || '?'}
                 </div>
               )}
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="h-8 w-8 text-white" />
+              </div>
             </div>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <p className="text-xs text-white/50">Tap to change photo</p>
 
             {/* Editable Fields */}
             <div className="w-full space-y-4">

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useStore } from '../stores/useStore';
 import { useMatches } from '../hooks/useMatches';
+import { ChatInterface } from '../components/chat/ChatInterface';
 import { Avatar } from '../components/ui/Avatar';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState, ListItemSkeleton, ErrorState } from '../components/ui';
@@ -10,10 +12,11 @@ import { cn } from '../lib/utils';
 export function InboxPage() {
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
-  
+  const [selectedMatch, setSelectedMatch] = useState<any>(null); // Using any for simplicity with the enriched match type
+
   // Fetch matches from API
   const { matches, count, isLoading, isError, error, mutate } = useMatches();
-  
+
   // No user state
   if (!user) {
     return (
@@ -34,7 +37,17 @@ export function InboxPage() {
       </div>
     );
   }
-  
+
+  if (selectedMatch) {
+    return (
+      <ChatInterface
+        matchId={selectedMatch.matchId}
+        recipientName={selectedMatch.matchedUser?.fullName || 'User'}
+        onBack={() => setSelectedMatch(null)}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -46,7 +59,7 @@ export function InboxPage() {
           </span>
         )}
       </div>
-      
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-8">
         {isLoading ? (
@@ -80,9 +93,10 @@ export function InboxPage() {
           // Matches list
           <div className="flex flex-col gap-3">
             {matches.map((match, index) => (
-              <Card 
-                key={match.matchId} 
+              <Card
+                key={match.matchId}
                 variant="acrylic"
+                onClick={() => setSelectedMatch(match)}
                 className={cn(
                   'cursor-pointer hover:bg-white/5 transition-all duration-200',
                   'transform hover:scale-[1.02] active:scale-[0.98]',
@@ -91,9 +105,9 @@ export function InboxPage() {
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <CardContent className="flex items-center gap-4 p-4">
-                  <Avatar 
+                  <Avatar
                     src={match.matchedUser?.profilePicture}
-                    size="lg" 
+                    size="lg"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold truncate">

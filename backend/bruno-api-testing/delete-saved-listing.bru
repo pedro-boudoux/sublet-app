@@ -1,0 +1,25 @@
+meta {
+  name: delete-saved-listing
+  type: http
+  seq: 24
+}
+
+delete {
+  url: http://localhost:7071/api/saved-listings/listing-uuid-here?userId=user-uuid-here
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: user-uuid-here
+}
+
+params:path {
+  listingId: listing-uuid-here
+}
+
+docs {
+  # Delete Saved Listing
+  
+  Removes a listing from the user's saved list.
+}

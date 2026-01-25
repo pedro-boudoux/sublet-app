@@ -1,0 +1,21 @@
+meta {
+  name: reset-swipes
+  type: http
+  seq: 17
+}
+
+delete {
+  url: http://localhost:7071/api/swipes/reset?userId=user-uuid-here
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: user-uuid-here
+}
+
+docs {
+  # Reset Swipes
+  
+  Deletes all swipes for a user (useful for testing/demo).
+}

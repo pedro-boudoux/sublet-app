@@ -1,0 +1,30 @@
+meta {
+  name: create-message
+  type: http
+  seq: 15
+}
+
+post {
+  url: http://localhost:7071/api/messages
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "matchId": "match-uuid-here",
+    "senderId": "sender-uuid-here",
+    "content": "Hello! I am interested in your sublet."
+  }
+}
+
+docs {
+  # Send Message
+  
+  Sends a chat message to a matched user.
+  
+  ## Body
+  - `matchId`: ID of the match
+  - `senderId`: ID of the user sending the message
+  - `content`: Text content
+}

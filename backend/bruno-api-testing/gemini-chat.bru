@@ -1,0 +1,24 @@
+meta {
+  name: gemini-chat
+  type: http
+  seq: 21
+}
+
+post {
+  url: http://localhost:7071/api/chat
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "message": "Help me find a sublet in Waterloo",
+    "history": []
+  }
+}
+
+docs {
+  # Gemini Chat
+  
+  AI Assistant endpoint for natural language queries about sublets.
+}

@@ -1,0 +1,24 @@
+meta {
+  name: save-listing
+  type: http
+  seq: 23
+}
+
+post {
+  url: http://localhost:7071/api/saved-listings
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": "user-uuid-here",
+    "listingId": "listing-uuid-here"
+  }
+}
+
+docs {
+  # Save Listing
+  
+  Saves/bookmarks a listing for a user.
+}

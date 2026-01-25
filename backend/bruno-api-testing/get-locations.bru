@@ -1,0 +1,17 @@
+meta {
+  name: get-locations
+  type: http
+  seq: 18
+}
+
+get {
+  url: http://localhost:7071/api/locations
+  body: none
+  auth: none
+}
+
+docs {
+  # Get Locations
+  
+  Returns a list of unique locations currently available in listings.
+}
