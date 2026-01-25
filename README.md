@@ -119,9 +119,61 @@ We solve the "Form Fatigue" problem using Generative AI.
 
 4.  **Storage:** This is directly injected into **Cosmos DB**, instantly updating the user's filter preferences.
 
+## Inspiration
+As students, the scramble to find housing is a biannual ritual. Whether we are moving for a 4-month co-op term or looking for someone to take over a lease while we study abroad, the current solutions are archaic. We were tired of scrolling through endless, unformatted Facebook Marketplace descriptions and dodging scams.
+
+We wanted to bring the efficiency of modern dating apps to the rental market. We realized that compatibility in housing isn't just about price and location; it's about *lifestyle*. Do you have pets? Do you smoke? Do you need wheelchair accessibility? We built **Sublety** to make finding a place (or a person) as easy as swiping right.
+
+## What it does
+**Sublety** is a desktop application connecting sub-letters with renters.
+
+* **Swipe to Match:** Users swipe through cards of potential rentals. A "match" triggers a confetti explosion and opens a chat.
+* **Smart Filtering:** The app strictly filters matches based on non-negotiables: Gender preference, Accessibility needs, Smoking/Vaping habits, and Pet ownership.
+* **Conversational Onboarding:** Instead of filling out a tedious form, users talk to the app. An AI assistant interviews the user and instantly builds their profile.
+
+## How we built it
+We prioritized a modern, lightweight, and reproducible stack.
+
+**The Core Application:**
+* **Frontend:** We built the UI with **React** (via Vite) for speed and used **Tauri v2** to wrap it into a lightweight native desktop executable (`.exe`).
+* **Swipe Mechanics:** We utilized `react-tinder-card` to handle the physics of the swiping interface.
+* **State & Data:** We avoided "prop-drilling" by using **Zustand** for global state management (like tracking the `currentUser`) and **SWR** for efficient data fetching and caching.
+
+**The Serverless Backend (Azure):**
+* **Hosting & Auth:** We deployed to **Azure Static Web Apps**, which handled our hosting and provided out-of-the-box authentication via GitHub/Microsoft.
+* **API:** Our backend logic runs on **Azure Functions** (Node.js), allowing us to scale endpoints without managing servers.
+* **Database:** We used **Azure Cosmos DB** (NoSQL) to store our JSON-heavy user profiles and match data.
+
+**The AI Integration:**
+* **ElevenLabs** provides the natural voice for our onboarding assistant.
+* **Google Gemini** parses the user's spoken responses into structured JSON for our database.
+
+## Challenges we ran into
+* **Local Cloud Emulation:** Running a desktop wrapper (Tauri) alongside a serverless backend locally was complex. We had to use `@azure/static-web-apps-cli` paired with `concurrently` to run the frontend, backend, and emulator in a single terminal command.
+* **State Management:** Keeping the "deck" of user cards in sync with the backend while handling rapid swipes was tricky. We used **Zustand** to decouple the UI state from the database logic.
+* **Hallucinations vs. Structured Data:** Getting Gemini to output clean, database-ready JSON without "hallucinating" extra fields required significant prompt engineering.
+
+## Accomplishments that we're proud of
+* **Reproducible Environment:** We set up a **Nix shell** at the project root. This meant every team member had the exact same dependencies and environment instantly, eliminating "it works on my machine" issues.
+* **Polished UX:** We focused heavily on "game feel." Using `canvas-confetti` for matches and `react-hot-toast` for notifications makes the app feel responsive and fun.
+* **Serverless Architecture:** We successfully built a full-stack app without provisioning a single server, relying entirely on Azure's serverless ecosystem.
+
+## What we learned
+* **Tauri vs. Electron:** We learned how to build cross-platform desktop apps using Tauri, which is significantly more resource-efficient than Electron because it uses the OS's native webview.
+* **NoSQL Modeling:** We gained experience structuring data for **Cosmos DB**, optimizing our schema for fast reads (swiping) rather than complex joins.
+* **Prompt Engineering is Coding:** We learned that writing natural language prompts for Gemini requires the same rigor and testing as writing standard code.
+
+## What's next for Sublety
+* **Mobile Port:** Since we used React and Tauri, porting this to a native mobile app is the next logical step.
+* **ID Verification:** Integrating a verification API to prevent scams.
+* **Smart Contracts:** Auto-generating sublet agreements based on matched terms.
+
+
+
 ## 👥 Contributors
-* **[Name]** - Full Stack
-* **[Name]** - AI Integration
-* **[Name]** - Design & Frontend
+* **Taylor Wymes**
+* **Pedro Boudoux**
+* **Veronica Rodriugez Noguera**
+* **Gabriel Crisafi**
 
 
