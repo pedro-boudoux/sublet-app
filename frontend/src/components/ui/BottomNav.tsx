@@ -1,22 +1,28 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Layers, Heart, MessageCircle, User } from 'lucide-react';
+import { Layers, Heart, Home, MessageCircle, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-const navItems = [
-  { id: 'discover', label: 'Discover', icon: Layers, path: '/' },
-  { id: 'saved', label: 'Saved', icon: Heart, path: '/saved' },
-  { id: 'inbox', label: 'Inbox', icon: MessageCircle, path: '/inbox' },
-  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
-] as const;
+import { useStore } from '../../stores/useStore';
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const user = useStore((state) => state.user);
+
+  // Dynamic label based on user mode
+  const savedLabel = user?.mode === 'offering' ? 'My Listing' : 'Saved';
+  const SavedIcon = user?.mode === 'offering' ? Home : Heart;
+
+  const navItems = [
+    { id: 'discover', label: 'Discover', icon: Layers, path: '/' },
+    { id: 'saved', label: savedLabel, icon: SavedIcon, path: '/saved' },
+    { id: 'inbox', label: 'Inbox', icon: MessageCircle, path: '/inbox' },
+    { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+  ];
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
-  
+
   return (
     <nav className="fixed bottom-0 left-0 w-full z-50">
       {/* Acrylic Background */}
@@ -25,7 +31,7 @@ export function BottomNav() {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            
+
             return (
               <button
                 key={item.id}
@@ -40,7 +46,7 @@ export function BottomNav() {
                 {isActive && (
                   <div className="absolute -top-1 w-8 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(0,121,214,0.6)]" />
                 )}
-                
+
                 {/* Icon */}
                 <Icon
                   className={cn(
@@ -50,7 +56,7 @@ export function BottomNav() {
                   )}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
-                
+
                 {/* Label */}
                 <span
                   className={cn(
@@ -65,7 +71,7 @@ export function BottomNav() {
           })}
         </div>
       </div>
-      
+
       {/* iOS Home Indicator Safe Area */}
       <div className="h-1 bg-transparent w-full absolute bottom-1 flex justify-center pointer-events-none">
         <div className="w-1/3 h-1 bg-white/20 rounded-full" />
@@ -73,3 +79,4 @@ export function BottomNav() {
     </nav>
   );
 }
+

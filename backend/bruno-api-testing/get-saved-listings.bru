@@ -1,0 +1,21 @@
+meta {
+  name: get-saved-listings
+  type: http
+  seq: 22
+}
+
+get {
+  url: http://localhost:7071/api/saved-listings?userId=user-uuid-here
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: user-uuid-here
+}
+
+docs {
+  # Get Saved Listings
+  
+  Retrieves a user's saved/bookmarked listings.
+}

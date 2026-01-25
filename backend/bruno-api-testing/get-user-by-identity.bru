@@ -1,0 +1,17 @@
+meta {
+  name: get-user-by-identity
+  type: http
+  seq: 20
+}
+
+get {
+  url: http://localhost:7071/api/users/identity/auth0|123456
+  body: none
+  auth: none
+}
+
+docs {
+  # Get User By Identity
+  
+  Fetches user profile using the Auth0 (or other provider) identity string.
+}

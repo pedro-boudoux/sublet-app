@@ -7,7 +7,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // Backend API URL (Azure Functions default port is 7071)
 // @ts-expect-error process is a nodejs global
-const apiUrl = process.env.VITE_API_URL || 'http://localhost:7071';
+const apiUrl = process.env.VITE_API_URL || 'http://127.0.0.1:7071';
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
@@ -27,10 +27,10 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
+        protocol: "ws",
+        host,
+        port: 1421,
+      }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`

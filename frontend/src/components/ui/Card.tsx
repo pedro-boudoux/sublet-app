@@ -1,10 +1,8 @@
 import { cn } from '../../lib/utils';
 
-export interface CardProps {
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   variant?: 'default' | 'acrylic';
-  className?: string;
-  style?: React.CSSProperties;
 }
 
 export function Card({
@@ -12,23 +10,25 @@ export function Card({
   variant = 'default',
   className,
   style,
+  ...props
 }: CardProps) {
   return (
     <div
       className={cn(
         'rounded-2xl',
-        
+
         variant === 'default' && [
           'bg-gray-800/40 border border-white/5',
         ],
-        
+
         variant === 'acrylic' && [
           'acrylic-panel',
         ],
-        
+
         className
       )}
       style={style}
+      {...props}
     >
       {children}
     </div>

@@ -53,6 +53,7 @@ Use this as a reference when building the frontend.
 | Method   | Endpoint                 | Purpose                        |
 |----------|--------------------------|--------------------------------|
 | `POST`   | `/api/listings`          | Create a new sublet listing    |
+| `GET`    | `/api/listings`          | Get multiple listings (ownerId) |
 | `GET`    | `/api/listings/:listingId`| Get a specific listing         |
 | `PATCH`  | `/api/listings/:listingId`| Update a listing               |
 | `DELETE` | `/api/listings/:listingId`| Delete a listing               |
@@ -70,6 +71,7 @@ Use this as a reference when building the frontend.
   distanceTo?: string;     // e.g. "12 mins to NYU"
   type: "studio" | "1br" | "2br" | "room";  // Required
   amenities?: string[];    // e.g. ["Utilities included", "Furnished"]
+  lifestyleTags?: string[]; // Offering-style tags e.g. ["Dog Friendly", "Smoke-Free"]
   images?: string[];       // URLs from /api/upload/listing
   description?: string;
   isVerified: boolean;     // Default: false

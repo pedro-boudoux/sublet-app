@@ -4,3 +4,4 @@ export { SavedPage } from './SavedPage';
 export { InboxPage } from './InboxPage';
 export { OnboardingPage } from './OnboardingPage';
 export { CreateListingPage } from './CreateListingPage';
+export { LoginPage } from './LoginPage';

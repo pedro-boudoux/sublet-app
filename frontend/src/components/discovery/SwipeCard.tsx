@@ -1,13 +1,15 @@
 import { forwardRef } from 'react';
 import TinderCard from 'react-tinder-card';
 import { UserCard } from './UserCard';
-import type { ApiUser } from '../../lib/api';
+import { ListingCard } from './ListingCard';
+import type { ApiUser, ApiListing } from '../../lib/api';
 import { cn } from '../../lib/utils';
 
 export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 
 interface SwipeCardProps {
-  data: ApiUser;
+  data: ApiUser | ApiListing;
+  cardType: 'user' | 'listing';
   onSwipe: (direction: SwipeDirection) => void;
   onCardLeftScreen: () => void;
   onTap?: () => void;
@@ -17,6 +19,7 @@ interface SwipeCardProps {
 
 export const SwipeCard = forwardRef<any, SwipeCardProps>(({
   data,
+  cardType,
   onSwipe,
   onCardLeftScreen,
   onTap,
@@ -34,10 +37,15 @@ export const SwipeCard = forwardRef<any, SwipeCardProps>(({
       swipeThreshold={100}
     >
       <div className="w-full h-full cursor-grab active:cursor-grabbing group">
-        <UserCard user={data} onTap={onTap} />
+        {cardType === 'listing' ? (
+          <ListingCard listing={data as ApiListing} onTap={onTap} />
+        ) : (
+          <UserCard user={data as ApiUser} onTap={onTap} />
+        )}
       </div>
     </TinderCard>
   );
 });
 
 SwipeCard.displayName = 'SwipeCard';
+

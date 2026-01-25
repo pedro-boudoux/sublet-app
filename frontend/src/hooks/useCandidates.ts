@@ -1,10 +1,12 @@
 import useSWR from 'swr';
-import { getCandidates, type ApiUser, type CandidatesResponse } from '../lib/api';
+import { getCandidates, type ApiUser, type ApiListing, type CandidatesResponse } from '../lib/api';
 import { useStore } from '../stores/useStore';
 
 interface UseCandidatesResult {
-  candidates: ApiUser[];
+  candidates: (ApiUser | ApiListing)[];
+  candidateType: 'users' | 'listings' | null;
   isLoading: boolean;
+  isValidating: boolean;
   isError: boolean;
   error: Error | undefined;
   mutate: () => void;
@@ -12,25 +14,32 @@ interface UseCandidatesResult {
 
 /**
  * Hook to fetch candidates for swiping
- * Requires a logged-in user
+ * Returns listings for "looking" users, users for "offering" users
  */
 export function useCandidates(): UseCandidatesResult {
   const user = useStore((state) => state.user);
   const userId = user?.id;
+  const userMode = user?.mode;
+  const searchLocation = user?.searchLocation;
 
-  const { data, error, isLoading, mutate } = useSWR<CandidatesResponse>(
-    userId ? ['candidates', userId] : null,
-    () => getCandidates(userId!, { limit: 20 }),
+  const { data, error, isLoading, isValidating, mutate } = useSWR<CandidatesResponse>(
+    // Include mode and location in key so it refetches when they change
+    userId && userMode ? ['candidates', userId, userMode, searchLocation || ''] : null,
+    ([, id, , location]: [string, string, string, string]) => getCandidates(id, {
+      limit: 20,
+      location: location || undefined
+    }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateIfStale: false,
     }
   );
 
   return {
     candidates: data?.candidates || [],
+    candidateType: data?.type || null,
     isLoading,
+    isValidating,
     isError: !!error,
     error,
     mutate,
@@ -45,6 +54,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner1@example.com',
     fullName: 'Sunny Studio Owner',
     age: 28,
+    gender: 'Other',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=1200&fit=crop',
@@ -60,6 +70,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner2@example.com',
     fullName: 'SoHo Apartment Owner',
     age: 32,
+    gender: 'Male',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=1200&fit=crop',
@@ -75,6 +86,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner3@example.com',
     fullName: 'Brooklyn Heights Host',
     age: 26,
+    gender: 'Female',
     searchLocation: 'Brooklyn, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=1200&fit=crop',
@@ -90,6 +102,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner4@example.com',
     fullName: 'East Village Lister',
     age: 30,
+    gender: 'Male',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=1200&fit=crop',
@@ -105,6 +118,7 @@ export const MOCK_LISTINGS: ApiUser[] = [
     email: 'owner5@example.com',
     fullName: 'Midtown Host',
     age: 35,
+    gender: 'Female',
     searchLocation: 'New York, NY',
     mode: 'offering',
     profilePicture: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=1200&fit=crop',

@@ -1,5 +1,11 @@
 # Sublet Tinder Tech Stack
 
+## Shell Info
+To run commands only run them through the Nix shell located at the project's root.
+```bash
+nix-shell
+```
+
 ## Tech & Purpose
 
 

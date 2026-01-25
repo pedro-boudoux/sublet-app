@@ -1,0 +1,29 @@
+meta {
+  name: get-messages
+  type: http
+  seq: 16
+}
+
+get {
+  url: http://localhost:7071/api/messages/match-uuid-here?userId=user-uuid-here
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: user-uuid-here
+}
+
+params:path {
+  matchId: match-uuid-here
+}
+
+docs {
+  # Get Messages
+  
+  Retrieves conversation history for a match.
+  
+  ## Params
+  - `matchId` (path): ID of the match
+  - `userId` (query): ID of the requesting user (for security/validation)
+}

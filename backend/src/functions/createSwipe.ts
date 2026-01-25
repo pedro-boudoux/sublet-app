@@ -7,11 +7,13 @@ const client = new CosmosClient(process.env.COSMOS_CONNECTION_STRING!);
 const database = client.database("sublet-db");
 const swipesContainer = database.container("swipes");
 const matchesContainer = database.container("matches");
+const listingsContainer = database.container("listings");
 
 // Swipe request interface
 interface CreateSwipeRequest {
     swiperId: string;
-    swipedUserId: string;
+    swipedId: string;          // Can be a userId or listingId
+    swipedType: "user" | "listing";  // Type of item being swiped on
     direction: "like" | "pass" | "superlike";
 }
 
@@ -20,13 +22,14 @@ interface CreateSwipeRequest {
  * 
  * @param request - HTTP POST request
  * @param request.body.swiperId - ID of the user performing the swipe (required)
- * @param request.body.swipedUserId - ID of the user being swiped on (required)
+ * @param request.body.swipedId - ID of the item being swiped on (user or listing) (required)
+ * @param request.body.swipedType - "user" or "listing" (required)
  * @param request.body.direction - "like" | "pass" | "superlike" (required)
  * 
  * @returns 201 - Swipe recorded successfully, includes { matched: false }
  * @returns 201 - Swipe recorded + match created, includes { matched: true, matchId: "..." }
  * @returns 400 - Missing required fields or invalid direction
- * @returns 409 - Already swiped on this user
+ * @returns 409 - Already swiped on this item
  * @returns 500 - Database error
  */
 export async function createSwipe(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -36,7 +39,7 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
         const body = await request.json() as CreateSwipeRequest;
 
         // Validate required fields
-        const requiredFields = ["swiperId", "swipedUserId", "direction"] as const;
+        const requiredFields = ["swiperId", "swipedId", "swipedType", "direction"] as const;
         const missingFields = requiredFields.filter(field => !body[field]);
 
         if (missingFields.length > 0) {
@@ -50,7 +53,6 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
         }
 
         // Validate direction
-        // could be due to errors with swiping, etc
         const validDirections = ["like", "pass", "superlike"];
         if (!validDirections.includes(body.direction)) {
             return {
@@ -61,11 +63,18 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
             };
         }
 
-        // Prevent self-swipe
-        // we should prevent the user from *even* getting recommended themselves
-        // maybe by either letting you be a subleaser OR a subletter
-        // but just in case we don't have time:
-        if (body.swiperId === body.swipedUserId) {
+        // Validate swipedType
+        if (body.swipedType !== "user" && body.swipedType !== "listing") {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: "Invalid swipedType. Must be 'user' or 'listing'"
+                }
+            };
+        }
+
+        // Prevent self-swipe (only for user type)
+        if (body.swipedType === "user" && body.swiperId === body.swipedId) {
             return {
                 status: 400,
                 jsonBody: { error: "Cannot swipe on yourself" }
@@ -76,43 +85,86 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
         const swipe = {
             id: uuidv4(),
             swiperId: body.swiperId,
-            swipedUserId: body.swipedUserId,
+            swipedId: body.swipedId,
+            swipedType: body.swipedType,
             direction: body.direction,
             createdAt: new Date().toISOString()
         };
 
         // Insert swipe into database
         await swipesContainer.items.create(swipe);
-        context.log(`Swipe recorded: ${body.swiperId} -> ${body.swipedUserId} (${body.direction})`);
+        context.log(`Swipe recorded: ${body.swiperId} -> ${body.swipedId} (${body.swipedType}, ${body.direction})`);
 
         // Check for mutual like (only if this was a like or superlike)
         let matched = false;
         let matchId: string | null = null;
 
         if (body.direction === "like" || body.direction === "superlike") {
-            // Check if the other user has already liked the current user
-            const reverseQuery = {
-                query: `SELECT * FROM c WHERE c.swiperId = @swipedUserId AND c.swipedUserId = @swiperId AND (c.direction = 'like' OR c.direction = 'superlike')`,
-                parameters: [
-                    { name: "@swipedUserId", value: body.swipedUserId },
-                    { name: "@swiperId", value: body.swiperId }
-                ]
-            };
-
-            const { resources: reverseSwipes } = await swipesContainer.items.query(reverseQuery).fetchAll();
-
-            if (reverseSwipes.length > 0) {
-                // Mutual like! Create a match
-                matchId = uuidv4();
-                const match = {
-                    id: matchId,
-                    userIds: [body.swiperId, body.swipedUserId].sort(), // Sort for consistency
-                    createdAt: new Date().toISOString()
+            if (body.swipedType === "user") {
+                // User-to-user swipe: check if the other user has liked back
+                const reverseQuery = {
+                    query: `SELECT * FROM c WHERE c.swiperId = @swipedId AND c.swipedId = @swiperId AND c.swipedType = 'user' AND (c.direction = 'like' OR c.direction = 'superlike')`,
+                    parameters: [
+                        { name: "@swipedId", value: body.swipedId },
+                        { name: "@swiperId", value: body.swiperId }
+                    ]
                 };
 
-                await matchesContainer.items.create(match);
-                matched = true;
-                context.log(`Match created: ${matchId}`);
+                const { resources: reverseSwipes } = await swipesContainer.items.query(reverseQuery).fetchAll();
+
+                if (reverseSwipes.length > 0) {
+                    // Mutual like! Create a match
+                    matchId = uuidv4();
+                    const match = {
+                        id: matchId,
+                        type: "user-user",
+                        userIds: [body.swiperId, body.swipedId].sort(),
+                        createdAt: new Date().toISOString()
+                    };
+
+                    await matchesContainer.items.create(match);
+                    matched = true;
+                    context.log(`Match created: ${matchId}`);
+                }
+            } else {
+                // Listing swipe: check if listing owner has liked this user
+                // First, get the listing to find its owner
+                const listingQuery = {
+                    query: "SELECT c.ownerId FROM c WHERE c.id = @listingId",
+                    parameters: [{ name: "@listingId", value: body.swipedId }]
+                };
+                const { resources: listings } = await listingsContainer.items.query(listingQuery).fetchAll();
+
+                if (listings.length > 0) {
+                    const ownerId = listings[0].ownerId;
+
+                    // Check if owner has liked this user
+                    const reverseQuery = {
+                        query: `SELECT * FROM c WHERE c.swiperId = @ownerId AND c.swipedId = @swiperId AND c.swipedType = 'user' AND (c.direction = 'like' OR c.direction = 'superlike')`,
+                        parameters: [
+                            { name: "@ownerId", value: ownerId },
+                            { name: "@swiperId", value: body.swiperId }
+                        ]
+                    };
+
+                    const { resources: reverseSwipes } = await swipesContainer.items.query(reverseQuery).fetchAll();
+
+                    if (reverseSwipes.length > 0) {
+                        // Match! The looking user liked the listing and the owner liked the user
+                        matchId = uuidv4();
+                        const match = {
+                            id: matchId,
+                            type: "user-listing",
+                            userIds: [body.swiperId, ownerId].sort(),
+                            listingId: body.swipedId,
+                            createdAt: new Date().toISOString()
+                        };
+
+                        await matchesContainer.items.create(match);
+                        matched = true;
+                        context.log(`Match created (user-listing): ${matchId}`);
+                    }
+                }
             }
         }
 
@@ -130,7 +182,7 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
         if (err.code === 409) {
             return {
                 status: 409,
-                jsonBody: { error: "Already swiped on this user" }
+                jsonBody: { error: "Already swiped on this item" }
             };
         }
 
@@ -155,3 +207,4 @@ app.http('create-swipe', {
     route: 'swipes',
     handler: createSwipe
 });
+

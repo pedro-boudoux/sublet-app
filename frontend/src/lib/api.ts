@@ -35,6 +35,7 @@ export interface ApiUser {
   email: string;
   fullName: string;
   age: number;
+  gender: 'Male' | 'Female' | 'Other';
   searchLocation: string;
   mode: 'looking' | 'offering';
   profilePicture: string;
@@ -46,10 +47,12 @@ export interface ApiUser {
 }
 
 export interface CreateUserRequest {
+  identityId: string;  // Azure SWA identity ID
   username: string;
   email: string;
   fullName: string;
   age: number;
+  gender: 'Male' | 'Female' | 'Other';
   searchLocation: string;
   mode: 'looking' | 'offering';
   profilePicture?: string;
@@ -60,6 +63,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   fullName?: string;
   age?: number;
+  gender?: 'Male' | 'Female' | 'Other';
   searchLocation?: string;
   mode?: 'looking' | 'offering';
   profilePicture?: string;
@@ -80,6 +84,7 @@ export interface ApiListing {
   distanceTo: string;
   type: ListingType;
   amenities: string[];
+  lifestyleTags: string[];  // Offering-style tags like "Dog Friendly"
   images: string[];
   description: string;
   isVerified: boolean;
@@ -96,6 +101,7 @@ export interface CreateListingRequest {
   type: ListingType;
   distanceTo?: string;
   amenities?: string[];
+  lifestyleTags?: string[];
   images?: string[];
   description?: string;
 }
@@ -108,6 +114,7 @@ export interface UpdateListingRequest {
   distanceTo?: string;
   type?: ListingType;
   amenities?: string[];
+  lifestyleTags?: string[];
   images?: string[];
   description?: string;
 }
@@ -115,7 +122,8 @@ export interface UpdateListingRequest {
 // Swipe Types
 export interface SwipeRequest {
   swiperId: string;
-  swipedUserId: string;
+  swipedId: string;  // User ID or Listing ID
+  swipedType: 'user' | 'listing';
   direction: 'like' | 'pass';
 }
 
@@ -142,10 +150,10 @@ export interface Match {
 
 // Response Types
 export interface CandidatesResponse {
-  candidates: ApiUser[];
+  candidates: (ApiUser | ApiListing)[];  // Users or Listings depending on mode
+  type: 'users' | 'listings';
   count: number;
   filters: {
-    targetMode: string;
     location: string | null;
     limit: number;
   };
@@ -160,7 +168,7 @@ export interface MatchesResponse {
 
 export class ApiError extends Error {
   status: number;
-  
+
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
@@ -175,7 +183,7 @@ async function fetchApi<T>(
   options?: RequestInit
 ): Promise<T> {
   let response: Response;
-  
+
   try {
     response = await fetch(`${API_BASE}${endpoint}`, {
       headers: {
@@ -236,6 +244,13 @@ export async function createListing(data: CreateListingRequest): Promise<ApiList
   });
 }
 
+export async function getListings(filters?: { ownerId?: string }): Promise<ApiListing[]> {
+  const params = new URLSearchParams();
+  if (filters?.ownerId) params.append('ownerId', filters.ownerId);
+
+  return fetchApi<ApiListing[]>(`/listings?${params}`);
+}
+
 export async function getListing(listingId: string): Promise<ApiListing> {
   return fetchApi<ApiListing>(`/listings/${listingId}`);
 }
@@ -253,6 +268,62 @@ export async function deleteListing(listingId: string): Promise<void> {
   });
 }
 
+// ============ Image Upload API ============
+
+export interface UploadListingImageRequest {
+  listingId: string;
+  image: string; // Base64 encoded image data
+  mimeType: string;
+}
+
+export interface UploadListingImageResponse {
+  url: string;
+  blobName: string;
+  size: number;
+  mimeType: string;
+  listingId: string;
+  totalImages: number;
+}
+
+export async function uploadListingImage(data: UploadListingImageRequest): Promise<UploadListingImageResponse> {
+  return fetchApi<UploadListingImageResponse>('/upload/listing', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// Profile Image Upload
+export interface UploadProfileImageRequest {
+  image: string; // Base64 encoded image data
+  mimeType: string;
+  fileName?: string;
+}
+
+export interface UploadProfileImageResponse {
+  url: string;
+  blobName: string;
+  size: number;
+  mimeType: string;
+}
+
+export async function uploadProfileImage(data: UploadProfileImageRequest): Promise<UploadProfileImageResponse> {
+  return fetchApi<UploadProfileImageResponse>('/upload/profile', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============ Locations API ============
+
+export interface LocationsResponse {
+  locations: string[];
+  count: number;
+}
+
+export async function getLocations(): Promise<LocationsResponse> {
+  return fetchApi<LocationsResponse>('/locations');
+}
+
 // ============ Candidates API ============
 
 export async function getCandidates(
@@ -262,7 +333,7 @@ export async function getCandidates(
   const params = new URLSearchParams({ userId });
   if (options?.location) params.append('location', options.location);
   if (options?.limit) params.append('limit', options.limit.toString());
-  
+
   return fetchApi<CandidatesResponse>(`/candidates?${params}`);
 }
 
@@ -275,6 +346,17 @@ export async function createSwipe(data: SwipeRequest): Promise<SwipeResponse> {
   });
 }
 
+export interface ResetSwipesResponse {
+  message: string;
+  deletedCount: number;
+}
+
+export async function resetSwipes(userId: string): Promise<ResetSwipesResponse> {
+  return fetchApi<ResetSwipesResponse>(`/swipes/reset?userId=${userId}`, {
+    method: 'DELETE',
+  });
+}
+
 // ============ Matches API ============
 
 export async function getMatches(userId: string): Promise<MatchesResponse> {
@@ -284,3 +366,64 @@ export async function getMatches(userId: string): Promise<MatchesResponse> {
 export async function getMatch(matchId: string): Promise<Match> {
   return fetchApi<Match>(`/matches/${matchId}`);
 }
+
+// ============ Messages API ============
+
+export interface Message {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface MessagesResponse {
+  messages: Message[];
+  count: number;
+}
+
+export async function getMessages(matchId: string, userId: string): Promise<MessagesResponse> {
+  return fetchApi<MessagesResponse>(`/messages/${matchId}?userId=${userId}`);
+}
+
+export interface SendMessageRequest {
+  matchId: string;
+  senderId: string;
+  content: string;
+}
+
+export async function sendMessage(data: SendMessageRequest): Promise<Message> {
+  return fetchApi<Message>('/messages', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============ Saved Listings API ============
+
+export interface SavedListing extends ApiListing {
+  savedAt: string;
+}
+
+export interface SavedListingsResponse {
+  savedListings: SavedListing[];
+  count: number;
+}
+
+export async function saveListing(userId: string, listingId: string): Promise<{ id: string; listingId: string; savedAt: string }> {
+  return fetchApi('/saved', {
+    method: 'POST',
+    body: JSON.stringify({ userId, listingId }),
+  });
+}
+
+export async function getSavedListings(userId: string): Promise<SavedListingsResponse> {
+  return fetchApi<SavedListingsResponse>(`/saved?userId=${userId}`);
+}
+
+export async function unsaveListing(userId: string, listingId: string): Promise<void> {
+  await fetchApi(`/saved/${listingId}?userId=${userId}`, {
+    method: 'DELETE',
+  });
+}
+

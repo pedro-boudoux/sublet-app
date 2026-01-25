@@ -17,6 +17,7 @@ interface CreateListingRequest {
     distanceTo?: string;
     type: "studio" | "1br" | "2br" | "room";
     amenities?: string[];
+    lifestyleTags?: string[];  // Offering-version lifestyle tags like "Dog Friendly", "Smoke-Free"
     images?: string[];
     description?: string;
 }
@@ -40,6 +41,7 @@ interface Listing extends CreateListingRequest {
  * @param request.body.type - "studio" | "1br" | "2br" | "room" (required)
  * @param request.body.distanceTo - e.g. "12 mins to NYU" (optional)
  * @param request.body.amenities - Array of strings like ["Utilities included", "Furnished"] (optional)
+ * @param request.body.lifestyleTags - Array of offering-style tags like ["Dog Friendly", "Smoke-Free"] (optional)
  * @param request.body.images - Array of image URLs (optional)
  * @param request.body.description - Detailed description (optional)
  * 
@@ -92,6 +94,7 @@ export async function createListing(request: HttpRequest, context: InvocationCon
             distanceTo: body.distanceTo || "",
             type: body.type,
             amenities: body.amenities || [],
+            lifestyleTags: body.lifestyleTags || [],
             images: body.images || [],
             description: body.description || "",
             isVerified: false,

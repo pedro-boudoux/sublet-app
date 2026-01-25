@@ -1,35 +1,67 @@
-import { X, MapPin, Check, Calendar, Home, DollarSign } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, MapPin, Check, Calendar, Home, DollarSign, Bookmark } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { Badge, VerifiedBadge } from '../ui/Badge';
 import { formatPrice, formatDate, cn } from '../../lib/utils';
-import type { Listing } from '../../types';
+import type { ApiListing } from '../../lib/api';
+import { saveListing, unsaveListing } from '../../lib/api';
+import { useStore } from '../../stores/useStore';
+import { useSavedListings } from '../../hooks';
 
 interface ListingDetailModalProps {
-  listing: Listing;
+  listing: ApiListing;
   onClose: () => void;
   onLike: () => void;
   onPass: () => void;
 }
 
-export function ListingDetailModal({ 
-  listing, 
-  onClose, 
-  onLike, 
-  onPass 
+export function ListingDetailModal({
+  listing,
+  onClose,
+  onLike,
+  onPass
 }: ListingDetailModalProps) {
+  const user = useStore((state) => state.user);
+  const { savedListings, mutate: mutateSaved } = useSavedListings();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const isSaved = useMemo(() => {
+    return savedListings.some(l => l.id === listing.id);
+  }, [savedListings, listing.id]);
+
+  const handleToggleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await unsaveListing(user.id, listing.id);
+        toast.success('Removed from saved');
+      } else {
+        await saveListing(user.id, listing.id);
+        toast.success('Listing saved');
+      }
+      mutateSaved();
+    } catch (error) {
+      toast.error(isSaved ? 'Failed to unsave' : 'Failed to save listing');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[90] flex flex-col">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Modal Content */}
       <div className="relative z-10 flex flex-col h-full bg-[#0f1a23] animate-in slide-in-from-bottom-2">
         {/* Header Image */}
         <div className="relative h-[45%] min-h-[280px]">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: listing.images?.[0]
@@ -37,30 +69,43 @@ export function ListingDetailModal({
                 : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
             }}
           />
-          
+
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a23] via-transparent to-black/40" />
-          
+
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors z-20"
           >
             <X className="h-5 w-5" />
           </button>
-          
+
+          {/* Save button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleToggleSave(); }}
+            disabled={isSaving}
+            className="absolute top-4 right-16 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors z-20"
+          >
+            {isSaving ? (
+              <div className="h-4 w-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Bookmark className={cn("h-5 w-5 transition-colors", isSaved && "fill-primary text-primary")} />
+            )}
+          </button>
+
           {/* Verified Badge */}
           {listing.isVerified && (
             <div className="absolute top-4 left-4">
               <VerifiedBadge label="Verified" />
             </div>
           )}
-          
+
           {/* Image dots indicator (if multiple images) */}
           {listing.images && listing.images.length > 1 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
               {listing.images.map((_, idx) => (
-                <div 
+                <div
                   key={idx}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
@@ -71,7 +116,7 @@ export function ListingDetailModal({
             </div>
           )}
         </div>
-        
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto hide-scrollbar px-5 py-4 space-y-5">
           {/* Price and Type */}
@@ -91,23 +136,23 @@ export function ListingDetailModal({
               {listing.type}
             </Badge>
           </div>
-          
+
           {/* Title */}
           <h1 className="text-2xl font-bold text-white leading-tight">
             {listing.title}
           </h1>
-          
+
           {/* Location */}
           <div className="flex items-center gap-2 text-white/80">
             <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
             <span>
               {listing.location}
-              {listing.distanceInfo && (
-                <span className="text-white/50"> • {listing.distanceInfo}</span>
+              {listing.distanceTo && (
+                <span className="text-white/50"> • {listing.distanceTo}</span>
               )}
             </span>
           </div>
-          
+
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="acrylic-panel rounded-xl p-4 flex items-center gap-3">
@@ -119,7 +164,7 @@ export function ListingDetailModal({
                 <p className="text-white font-semibold">{listing.type}</p>
               </div>
             </div>
-            
+
             <div className="acrylic-panel rounded-xl p-4 flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -129,7 +174,7 @@ export function ListingDetailModal({
                 <p className="text-white font-semibold">{formatDate(listing.availableDate)}</p>
               </div>
             </div>
-            
+
             <div className="acrylic-panel rounded-xl p-4 flex items-center gap-3 col-span-2">
               <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-primary" />
@@ -140,36 +185,36 @@ export function ListingDetailModal({
               </div>
             </div>
           </div>
-          
-          {/* Features */}
-          {listing.features && listing.features.length > 0 && (
+
+          {/* Amenities */}
+          {listing.amenities && listing.amenities.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-white font-semibold">Features & Amenities</h3>
               <div className="flex flex-wrap gap-2">
-                {listing.features.map((feature) => (
-                  <div 
-                    key={feature}
+                {listing.amenities.map((amenity) => (
+                  <div
+                    key={amenity}
                     className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/80"
                   >
                     <Check className="h-4 w-4 text-green-400" />
-                    {feature}
+                    {amenity}
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
-        
+
         {/* Action Buttons */}
         <div className="p-5 pt-3 border-t border-white/5 flex gap-3">
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => { onPass(); onClose(); }}
             className="flex-1 h-14"
           >
             Pass
           </Button>
-          <Button 
+          <Button
             onClick={() => { onLike(); onClose(); }}
             className="flex-1 h-14"
           >

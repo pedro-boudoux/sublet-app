@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Loader2, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Camera, Loader2, Plus, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { useStore } from '../stores/useStore';
-import { createListing, ApiError, type ListingType } from '../lib/api';
+import { useRef } from 'react';
+import { useUserListing } from '../hooks';
+import { createListing, updateListing, getListing, uploadListingImage, ApiError, type ListingType } from '../lib/api';
+import { OFFERING_TAGS } from '../constants/tagPairs';
 
 const listingTypeOptions = [
   { value: 'studio', label: 'Studio' },
@@ -32,8 +35,10 @@ const AMENITIES = [
 
 export function CreateListingPage() {
   const navigate = useNavigate();
+  const { listingId } = useParams();
+  const isEditing = !!listingId;
   const user = useStore((state) => state.user);
-  
+
   // Form state
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -43,55 +48,182 @@ export function CreateListingPage() {
   const [distanceTo, setDistanceTo] = useState('');
   const [description, setDescription] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
+  const [lifestyleTags, setLifestyleTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check for existing listing to enforce 1-listing limit
+  const { listing: existingListing, isLoading: checkingExisting, mutate: mutateUserListing } = useUserListing();
+
+  // Redirect if trying to create but already have a listing
+  useEffect(() => {
+    if (!isEditing && existingListing && !checkingExisting) {
+      toast('Redirecting to your existing listing...');
+      navigate(`/listings/${existingListing.id}/edit`, { replace: true });
+    }
+  }, [isEditing, existingListing, checkingExisting, navigate]);
+
+  // Fetch listing data if editing
+  useEffect(() => {
+    if (!listingId) return;
+
+    const fetchListing = async () => {
+      setIsLoading(true);
+      try {
+        const listing = await getListing(listingId);
+        if (listing.ownerId !== user?.id) {
+          toast.error('You can only edit your own listings');
+          navigate('/saved');
+          return;
+        }
+
+        setTitle(listing.title);
+        setPrice(listing.price.toString());
+        setLocation(listing.location);
+        setAvailableDate(listing.availableDate.split('T')[0]); // Ensure YYYY-MM-DD
+        setListingType(listing.type);
+        setDistanceTo(listing.distanceTo || '');
+        setDescription(listing.description || '');
+        setAmenities(listing.amenities || []);
+        setLifestyleTags(listing.lifestyleTags || []);
+        setImages(listing.images || []);
+      } catch (error) {
+        console.error('Failed to fetch listing:', error);
+        toast.error('Failed to load listing details');
+        navigate('/saved');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchListing();
+    }
+  }, [listingId, user, navigate]);
+
   const toggleAmenity = (amenity: string) => {
     setAmenities((prev) =>
       prev.includes(amenity) ? prev.filter((a) => a !== amenity) : [...prev, amenity]
     );
   };
-  
-  const addMockImage = () => {
-    // For demo purposes, add a placeholder image
-    const mockImages = [
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800',
-    ];
-    const randomImage = mockImages[images.length % mockImages.length];
-    setImages((prev) => [...prev, randomImage]);
+
+  const toggleLifestyleTag = (tag: string) => {
+    setLifestyleTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
-  
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Size check (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      // Add to preview images immediately for UI
+      setImages((prev) => [...prev, base64String]);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const handleSubmit = async () => {
     if (!user) {
       toast.error('Please log in first');
       return;
     }
-    
+
     if (!title || !price || !location || !availableDate) {
       toast.error('Please fill in all required fields');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      await createListing({
-        ownerId: user.id,
-        title,
-        price: parseInt(price),
-        location,
-        availableDate,
-        type: listingType,
-        distanceTo,
-        description,
-        amenities,
-        images,
-      });
-      
-      toast.success('Listing created successfully!');
+      let targetListingId = listingId;
+
+      // Filter images: data: URLs are new uploads, http URLs are existing to keep
+      const imagesToKeep = images.filter(img => !img.startsWith('data:'));
+      const imagesToUpload = images.filter(img => img.startsWith('data:'));
+
+      if (isEditing && listingId) {
+        await updateListing(listingId, {
+          title,
+          price: parseInt(price),
+          location,
+          availableDate,
+          type: listingType,
+          distanceTo,
+          description,
+          amenities,
+          lifestyleTags,
+          images: imagesToKeep, // Update list to filtered set of existing images
+        });
+        toast.success('Listing details updated!');
+      } else if (!isEditing && existingListing) {
+        // Fallback if they bypassed the redirect
+        toast.error('You already have a listing');
+        navigate(`/listings/${existingListing.id}/edit`);
+        return;
+      } else {
+        const newListing = await createListing({
+          ownerId: user.id,
+          title,
+          price: parseInt(price),
+          location,
+          availableDate,
+          type: listingType,
+          distanceTo,
+          description,
+          amenities,
+          lifestyleTags,
+          // New listing starts with no images (we upload after)
+          images: [],
+        });
+        targetListingId = newListing.id;
+        toast.success('Listing created!');
+      }
+
+      // Upload new images
+      if (imagesToUpload.length > 0 && targetListingId) {
+        const toastId = toast.loading(`Uploading ${imagesToUpload.length} images...`);
+
+        try {
+          for (const base64Image of imagesToUpload) {
+            // Extract mime type from base64 string
+            const mimeType = base64Image.split(';')[0].split(':')[1];
+            const cleanBase64 = base64Image.split(',')[1];
+
+            await uploadListingImage({
+              listingId: targetListingId,
+              image: cleanBase64,
+              mimeType
+            });
+          }
+          toast.success('Images uploaded successfully!', { id: toastId });
+        } catch (uploadErr) {
+          console.error('Image upload failed', uploadErr);
+          toast.error('Some images failed to upload', { id: toastId });
+        }
+      }
+
+      await mutateUserListing();
+
       navigate('/saved');
     } catch (error) {
       console.error('Failed to create listing:', error);
@@ -104,7 +236,7 @@ export function CreateListingPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   if (!user || user.mode !== 'offering') {
     return (
       <div className="flex flex-col h-full">
@@ -113,15 +245,23 @@ export function CreateListingPage() {
             <ArrowLeft className="h-6 w-6" />
           </Button>
           <h2 className="text-white text-lg font-semibold">Create Listing</h2>
-          <div className="w-10" />
+          <div className="w-10"></div>
         </div>
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="text-center text-white/60">
             <p className="text-lg font-medium mb-2">Switch to Offering Mode</p>
-            <p className="text-sm mb-4">You need to be in offering mode to create listings</p>
+            <p className="text-sm mb-4">You need to be in offering mode to {isEditing ? 'edit' : 'create'} listings</p>
             <Button onClick={() => navigate('/profile')}>Go to Profile</Button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-[#0f1a23] items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -133,10 +273,10 @@ export function CreateListingPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h2 className="text-white text-lg font-semibold">Create Listing</h2>
+        <h2 className="text-white text-lg font-semibold">{isEditing ? 'Edit Listing' : 'Create Listing'}</h2>
         <div className="w-10" />
       </div>
-      
+
       {/* Form */}
       <div className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-32">
         <div className="flex flex-col gap-6">
@@ -145,19 +285,32 @@ export function CreateListingPage() {
             <label className="block text-sm font-medium text-slate-300 mb-2">Photos</label>
             <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
               {images.map((img, idx) => (
-                <div key={idx} className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-white/5">
+                <div key={idx} className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-white/5 relative group">
                   <img src={img} alt={`Listing ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                className="hidden"
+                accept="image/*"
+              />
               <button
-                onClick={addMockImage}
+                onClick={() => fileInputRef.current?.click()}
                 className="flex-shrink-0 w-24 h-24 rounded-xl bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 <Camera className="h-6 w-6 text-white/40" />
               </button>
             </div>
           </div>
-          
+
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Title *</label>
@@ -169,7 +322,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Type */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Type *</label>
@@ -179,7 +332,7 @@ export function CreateListingPage() {
               onChange={(v) => setListingType(v as ListingType)}
             />
           </div>
-          
+
           {/* Price & Date */}
           <div className="flex gap-4">
             <div className="flex-1">
@@ -202,7 +355,7 @@ export function CreateListingPage() {
               />
             </div>
           </div>
-          
+
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Location *</label>
@@ -214,7 +367,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Distance To */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Distance To (optional)</label>
@@ -226,7 +379,7 @@ export function CreateListingPage() {
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          
+
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
@@ -238,7 +391,7 @@ export function CreateListingPage() {
               className="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
             />
           </div>
-          
+
           {/* Amenities */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Amenities</label>
@@ -254,20 +407,42 @@ export function CreateListingPage() {
               ))}
             </div>
           </div>
+
+          {/* Lifestyle Tags (Offering version) */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Lifestyle Compatibility</label>
+            <p className="text-slate-500 text-xs mb-3">Help tenants know if they're a good fit</p>
+            <div className="flex flex-wrap gap-2">
+              {OFFERING_TAGS.map((tag) => (
+                <Chip
+                  key={tag}
+                  selected={lifestyleTags.includes(tag)}
+                  onClick={() => toggleLifestyleTag(tag)}
+                >
+                  {tag}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-      
+
       {/* Submit Button */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0f1a23] via-[#0f1a23] to-transparent">
-        <Button 
-          className="w-full h-14" 
+        <Button
+          className="w-full h-14"
           onClick={handleSubmit}
           disabled={isSubmitting || !title || !price || !location || !availableDate}
         >
           {isSubmitting ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Creating...</span>
+              <span>{isEditing ? 'Updating...' : 'Creating...'}</span>
+            </>
+          ) : isEditing ? (
+            <>
+              <Save className="h-5 w-5" />
+              <span>Update Listing</span>
             </>
           ) : (
             <>

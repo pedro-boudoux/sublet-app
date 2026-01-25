@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 // Lazy initialization - only connect when needed
 let containerClient: ContainerClient | null = null;
 
-function getContainerClient(): ContainerClient {
+async function getContainerClient(): Promise<ContainerClient> {
     if (!containerClient) {
         const connectionString = process.env.BLOB_CONNECTION_STRING;
         if (!connectionString) {
@@ -13,6 +13,32 @@ function getContainerClient(): ContainerClient {
         }
         const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
         containerClient = blobServiceClient.getContainerClient("profiles");
+
+        // Ensure container exists and has public access
+        await containerClient.createIfNotExists();
+        await containerClient.setAccessPolicy('blob');
+
+        // Enable CORS for the Blob Service to allow browser access
+        const serviceProperties = await blobServiceClient.getProperties();
+        const corsRules = serviceProperties.cors || [];
+
+        // Check if our rule already exists to avoid overwriting
+        const hasOpenCors = corsRules.some(rule => rule.allowedOrigins === '*');
+
+        if (!hasOpenCors) {
+            corsRules.push({
+                allowedOrigins: '*',
+                allowedMethods: "GET,HEAD,OPTIONS",
+                allowedHeaders: "*",
+                exposedHeaders: "*",
+                maxAgeInSeconds: 3600
+            });
+
+            await blobServiceClient.setProperties({
+                ...serviceProperties,
+                cors: corsRules
+            });
+        }
     }
     return containerClient;
 }
@@ -88,7 +114,8 @@ export async function uploadProfileImage(request: HttpRequest, context: Invocati
         const blobName = `${uuidv4()}.${extension}`;
 
         // Get blob client
-        const blockBlobClient = getContainerClient().getBlockBlobClient(blobName);
+        const container = await getContainerClient();
+        const blockBlobClient = container.getBlockBlobClient(blobName);
 
         // Upload to Azure Blob Storage
         await blockBlobClient.uploadData(imageBuffer, {

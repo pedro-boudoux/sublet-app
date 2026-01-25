@@ -5,18 +5,21 @@ import { CosmosClient } from "@azure/cosmos";
 const client = new CosmosClient(process.env.COSMOS_CONNECTION_STRING!);
 const database = client.database("sublet-db");
 const usersContainer = database.container("users");
+const listingsContainer = database.container("listings");
 const swipesContainer = database.container("swipes");
 
 /**
- * Fetches candidate users for the discovery feed.
- * Returns users with the opposite mode who haven't been swiped on yet.
+ * Fetches candidates for the discovery feed based on user mode.
+ * 
+ * - "looking" users see LISTINGS (properties to rent)
+ * - "offering" users see USERS (potential tenants looking for a place)
  * 
  * @param request - HTTP GET request
- * @param request.query.userId - Current user's ID (required) — used to filter out self and already-swiped users
- * @param request.query.location - Filter by searchLocation (optional)
+ * @param request.query.userId - Current user's ID (required)
+ * @param request.query.location - Filter by location (optional)
  * @param request.query.limit - Max number of candidates to return (optional, default: 20, max: 50)
  * 
- * @returns 200 - Array of candidate user objects to swipe on
+ * @returns 200 - { candidates: [...], type: "listings" | "users", count: number }
  * @returns 400 - Missing userId parameter
  * @returns 404 - Current user not found
  * @returns 500 - Database error
@@ -38,7 +41,7 @@ export async function getCandidates(request: HttpRequest, context: InvocationCon
     }
 
     try {
-        // 1. Get current user to determine their mode (using query for partition key flexibility)
+        // 1. Get current user to determine their mode
         const userQuery = {
             query: "SELECT * FROM c WHERE c.id = @userId",
             parameters: [{ name: "@userId", value: userId }]
@@ -53,55 +56,86 @@ export async function getCandidates(request: HttpRequest, context: InvocationCon
             };
         }
 
-        // Determine opposite mode (if looking, show offering users and vice versa)
-        const targetMode = currentUser.mode === "looking" ? "offering" : "looking";
-
-        // 2. Get IDs of users already swiped on by current user
+        // 2. Get IDs of items already swiped on by current user
         const swipesQuery = {
-            query: "SELECT c.swipedUserId FROM c WHERE c.swiperId = @userId",
+            query: "SELECT c.swipedId FROM c WHERE c.swiperId = @userId",
             parameters: [{ name: "@userId", value: userId }]
         };
-
         const { resources: swipes } = await swipesContainer.items.query(swipesQuery).fetchAll();
-        const swipedUserIds = swipes.map((s: { swipedUserId: string }) => s.swipedUserId);
+        const swipedIds = swipes.map((s: { swipedId: string }) => s.swipedId);
 
-        // 3. Build query for candidates
-        let candidatesQuery = `
-            SELECT * FROM c 
-            WHERE c.mode = @targetMode 
-            AND c.id != @userId
-        `;
-        const parameters: { name: string; value: string | string[] }[] = [
-            { name: "@targetMode", value: targetMode },
-            { name: "@userId", value: userId }
-        ];
+        let candidates: any[] = [];
+        let candidateType: "listings" | "users";
 
-        // Add location filter if provided
-        if (location) {
-            candidatesQuery += ` AND c.searchLocation = @location`;
-            parameters.push({ name: "@location", value: location });
+        if (currentUser.mode === "looking") {
+            // LOOKING users see LISTINGS
+            candidateType = "listings";
+
+            let listingsQuery = `
+                SELECT * FROM c 
+                WHERE c.ownerId != @userId
+            `;
+            const parameters: { name: string; value: string }[] = [
+                { name: "@userId", value: userId }
+            ];
+
+            // Add location filter if provided (case-insensitive)
+            if (location) {
+                listingsQuery += ` AND LOWER(c.location) = LOWER(@location)`;
+                parameters.push({ name: "@location", value: location });
+            }
+
+            listingsQuery += ` OFFSET 0 LIMIT ${limit}`;
+
+            const { resources: allListings } = await listingsContainer.items.query({
+                query: listingsQuery,
+                parameters
+            }).fetchAll();
+
+            // Filter out already-swiped listings
+            candidates = allListings.filter(
+                (listing: { id: string }) => !swipedIds.includes(listing.id)
+            );
+
+        } else {
+            // OFFERING users see USERS who are looking
+            candidateType = "users";
+
+            let usersQuery = `
+                SELECT * FROM c 
+                WHERE c.mode = 'looking' 
+                AND c.id != @userId
+            `;
+            const parameters: { name: string; value: string }[] = [
+                { name: "@userId", value: userId }
+            ];
+
+            // Add location filter if provided (case-insensitive)
+            if (location) {
+                usersQuery += ` AND LOWER(c.searchLocation) = LOWER(@location)`;
+                parameters.push({ name: "@location", value: location });
+            }
+
+            usersQuery += ` OFFSET 0 LIMIT ${limit}`;
+
+            const { resources: allUsers } = await usersContainer.items.query({
+                query: usersQuery,
+                parameters
+            }).fetchAll();
+
+            // Filter out already-swiped users
+            candidates = allUsers.filter(
+                (user: { id: string }) => !swipedIds.includes(user.id)
+            );
         }
-
-        // Note: LIMIT cannot be parameterized in Cosmos DB, must be interpolated directly
-        candidatesQuery += ` OFFSET 0 LIMIT ${limit}`;
-
-        const { resources: allCandidates } = await usersContainer.items.query({
-            query: candidatesQuery,
-            parameters
-        }).fetchAll();
-
-        // 4. Filter out already-swiped users (done in JS since Cosmos doesn't support NOT IN well)
-        const candidates = allCandidates.filter(
-            (candidate: { id: string }) => !swipedUserIds.includes(candidate.id)
-        );
 
         return {
             status: 200,
             jsonBody: {
                 candidates,
+                type: candidateType,
                 count: candidates.length,
                 filters: {
-                    targetMode,
                     location: location || null,
                     limit
                 }
@@ -131,3 +165,4 @@ app.http('get-candidates', {
     route: 'candidates',
     handler: getCandidates
 });
+
