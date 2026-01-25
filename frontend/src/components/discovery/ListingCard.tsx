@@ -19,18 +19,21 @@ export function ListingCard({ listing, onTap }: ListingCardProps) {
 
   return (
     <div
-      className="relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a]"
+      className="group relative w-full h-full rounded-2xl overflow-hidden shadow-fluent border border-white/10 bg-[#1a1a1a] transform-gpu"
       onClick={handleClick}
     >
       {/* Main Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style={{
-          backgroundImage: listing.images?.[0]
-            ? `url(${listing.images[0]})`
-            : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-        }}
-      />
+      {listing.images?.[0] ? (
+        <img
+          src={listing.images[0]}
+          alt={listing.title}
+          className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+        />
+      ) : (
+        <div
+          className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#16213e] transition-transform duration-700 group-hover:scale-105"
+        />
+      )}
 
       {/* Top Gradient for Readability */}
       <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
