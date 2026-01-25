@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Chip } from '../components/ui/Chip';
 import { Card, CardContent } from '../components/ui/Card';
+import { VoiceRecorder } from '../components/onboarding';
 import { useAuthContext } from '../components/auth';
 import { useStore } from '../stores/useStore';
 import { createUser, type CreateUserRequest, ApiError } from '../lib/api';
@@ -24,7 +25,7 @@ const genderOptions = [
 ];
 
 // Steps for onboarding
-type Step = 'mode' | 'basics' | 'bio' | 'lifestyle' | 'complete';
+type Step = 'voice' | 'mode' | 'basics' | 'bio' | 'lifestyle' | 'complete';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export function OnboardingPage() {
   const setIsOnboarded = useStore((state) => state.setIsOnboarded);
 
   // Form state
-  const [step, setStep] = useState<Step>('mode');
+  const [step, setStep] = useState<Step>('voice');
   const [mode, setMode] = useState<'looking' | 'offering'>(user?.mode || 'looking');
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [age, setAge] = useState(user?.age?.toString() || '');
@@ -51,8 +52,41 @@ export function OnboardingPage() {
     );
   };
 
+  // Handle profile extracted from voice recording
+  const handleProfileExtracted = (
+    profile: {
+      fullName: string | null;
+      age: number | null;
+      gender: 'Male' | 'Female' | 'Other' | null;
+      searchLocation: string | null;
+      mode: 'looking' | 'offering' | null;
+      bio: string;
+      lifestyleTags: string[];
+    },
+    _voiceTranscription: string
+  ) => {
+    // Populate form fields with extracted data
+    if (profile.fullName) setFullName(profile.fullName);
+    if (profile.age) setAge(profile.age.toString());
+    if (profile.gender) setGender(profile.gender);
+    if (profile.searchLocation) setLocation(profile.searchLocation);
+    if (profile.mode) setMode(profile.mode);
+    if (profile.bio) setBio(profile.bio);
+    if (profile.lifestyleTags?.length) setSelectedTags(profile.lifestyleTags);
+
+    // Show success message
+    toast.success('Profile populated from your voice! Please review your info.');
+
+    // Go to first form step so user can verify extracted data
+    setStep('mode');
+  };
+
+  const handleSkipVoice = () => {
+    setStep('mode');
+  };
+
   const handleNext = () => {
-    const steps: Step[] = ['mode', 'basics', 'bio', 'lifestyle', 'complete'];
+    const steps: Step[] = ['voice', 'mode', 'basics', 'bio', 'lifestyle', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
       setStep(steps[currentIndex + 1]);
@@ -60,7 +94,7 @@ export function OnboardingPage() {
   };
 
   const handleBack = () => {
-    const steps: Step[] = ['mode', 'basics', 'bio', 'lifestyle', 'complete'];
+    const steps: Step[] = ['voice', 'mode', 'basics', 'bio', 'lifestyle', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex > 0) {
       setStep(steps[currentIndex - 1]);
@@ -131,6 +165,8 @@ export function OnboardingPage() {
 
   const canProceed = () => {
     switch (step) {
+      case 'voice':
+        return true; // Voice step has its own buttons
       case 'mode':
         return true;
       case 'basics':
@@ -152,12 +188,12 @@ export function OnboardingPage() {
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <div className="flex gap-1.5">
-          {['mode', 'basics', 'bio', 'lifestyle'].map((s) => (
+          {['voice', 'mode', 'basics', 'bio', 'lifestyle'].map((s) => (
             <div
               key={s}
               className={cn(
-                'w-8 h-1 rounded-full transition-colors',
-                step === s || ['mode', 'basics', 'bio', 'lifestyle'].indexOf(step) > ['mode', 'basics', 'bio', 'lifestyle'].indexOf(s)
+                'w-6 h-1 rounded-full transition-colors',
+                step === s || ['voice', 'mode', 'basics', 'bio', 'lifestyle'].indexOf(step) > ['voice', 'mode', 'basics', 'bio', 'lifestyle'].indexOf(s)
                   ? 'bg-primary'
                   : 'bg-white/20'
               )}
@@ -169,6 +205,16 @@ export function OnboardingPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-32">
+        {/* Step: Voice Recording */}
+        {step === 'voice' && (
+          <div className="flex flex-col gap-6 pt-8">
+            <VoiceRecorder
+              onProfileExtracted={handleProfileExtracted}
+              onSkip={handleSkipVoice}
+            />
+          </div>
+        )}
+
         {/* Step: Mode Selection */}
         {step === 'mode' && (
           <div className="flex flex-col gap-6 pt-8">
@@ -341,7 +387,10 @@ export function OnboardingPage() {
 
       {/* Bottom Action */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0f1a23] via-[#0f1a23] to-transparent">
-        {step === 'complete' ? (
+        {step === 'voice' ? (
+          // Voice step has its own buttons inside VoiceRecorder
+          null
+        ) : step === 'complete' ? (
           <Button
             className="w-full"
             onClick={handleComplete}
