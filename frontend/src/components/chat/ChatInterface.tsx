@@ -18,8 +18,7 @@ export function ChatInterface({ matchId, recipientName, onBack }: ChatInterfaceP
     const [isSending, setIsSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Poll for messages every 3 seconds
-    const { data, mutate } = useSWR(
+    const { data, error, mutate } = useSWR(
         user ? ['messages', matchId, user.id] : null,
         ([, mid, uid]) => getMessages(mid, uid),
         {
@@ -29,6 +28,7 @@ export function ChatInterface({ matchId, recipientName, onBack }: ChatInterfaceP
     );
 
     const messages = data?.messages || [];
+    console.log(`[ChatInterface] Match: ${matchId}, Messages: ${messages.length}`, messages, error);
 
     // Scroll to bottom on new messages
     useEffect(() => {

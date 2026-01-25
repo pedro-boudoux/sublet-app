@@ -85,16 +85,6 @@ async function apiSwipe(swiperId: string, swipedId: string, swipedType: "user" |
     return await res.json();
 }
 
-async function apiMessage(matchId: string, senderId: string, content: string) {
-    const res = await fetch(`${API_BASE}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId, senderId, content })
-    });
-    if (!res.ok) throw new Error(`Message failed: ${await res.text()}`);
-    return await res.json();
-}
-
 async function main() {
     let targetUserId = process.argv[2];
 
@@ -124,14 +114,6 @@ async function main() {
     }
 
     console.log(`Found user: ${user.fullName} (${user.mode})`);
-
-    const MESSAGES = [
-        "Hey! I saw your profile and thought we'd be a good match.",
-        "Hi there, are you still looking?",
-        "Love the vibe! Let's chat.",
-        "Hey, is the place still available?", // contextual
-        "Hi! When are you looking to move in?" // contextual
-    ];
 
     // Generate FORCE matches
     const TARGET_MIN_MATCHES = 6;
@@ -183,11 +165,6 @@ async function main() {
                     console.log(`  ✅ [MATCHED] Match ID: ${(matchRes as any).matchId}`);
                     console.log(`     Listing: ${listing.title}`);
                     console.log(`     Tags: ${(listing.lifestyleTags || []).join(", ")}`);
-
-                    // 3. Host sends message
-                    const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
-                    await apiMessage((matchRes as any).matchId, host.id, msg);
-                    console.log(`  [MSG] Sent: "${msg}"`);
                 } else {
                     console.log("  [WARNING] Did not match (maybe already swiped?)");
                 }
@@ -238,11 +215,6 @@ async function main() {
                     console.log(`  ✅ [MATCHED] Match ID: ${(matchRes as any).matchId}`);
                     console.log(`     User: ${seeker.fullName}`);
                     console.log(`     Tags: ${(seeker.lifestyleTags || []).join(", ")}`);
-
-                    // 3. Seeker sends message
-                    const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
-                    await apiMessage((matchRes as any).matchId, seeker.id, msg);
-                    console.log(`  [MSG] Sent: "${msg}"`);
                 } else {
                     console.log("  [WARNING] Did not match (maybe already swiped?)");
                 }

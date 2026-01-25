@@ -64,6 +64,7 @@ export async function getMessages(request: HttpRequest, context: InvocationConte
         };
 
         const { resources: messages } = await messagesContainer.items.query(messagesQuery).fetchAll();
+        context.log(`Found ${messages.length} messages for match ${matchId}`);
 
         return {
             status: 200,

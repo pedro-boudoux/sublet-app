@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useStore } from '../stores/useStore';
@@ -16,6 +16,11 @@ export function InboxPage() {
 
   // Fetch matches from API
   const { matches, count, isLoading, isError, error, mutate } = useMatches();
+
+  // Force refresh on entry
+  useEffect(() => {
+    mutate();
+  }, [mutate]);
 
   // No user state
   if (!user) {

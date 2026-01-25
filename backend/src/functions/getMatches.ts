@@ -57,10 +57,18 @@ export async function getMatches(request: HttpRequest, context: InvocationContex
                 return {
                     matchId: match.id,
                     matchedAt: match.createdAt,
+                    lastMessageTimestamp: (match as any).lastMessageTimestamp,
                     matchedUser: otherUser
                 };
             })
         );
+
+        // Sort by last message timestamp (or creation date) descending
+        enrichedMatches.sort((a, b) => {
+            const dateA = new Date(a.lastMessageTimestamp || a.matchedAt).getTime();
+            const dateB = new Date(b.lastMessageTimestamp || b.matchedAt).getTime();
+            return dateB - dateA;
+        });
 
         return {
             status: 200,

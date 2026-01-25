@@ -8,6 +8,7 @@ const database = client.database("sublet-db");
 const swipesContainer = database.container("swipes");
 const matchesContainer = database.container("matches");
 const listingsContainer = database.container("listings");
+const usersContainer = database.container("users");
 
 // Swipe request interface
 interface CreateSwipeRequest {
@@ -19,18 +20,6 @@ interface CreateSwipeRequest {
 
 /**
  * Records a swipe action and creates a match if mutual like is detected.
- * 
- * @param request - HTTP POST request
- * @param request.body.swiperId - ID of the user performing the swipe (required)
- * @param request.body.swipedId - ID of the item being swiped on (user or listing) (required)
- * @param request.body.swipedType - "user" or "listing" (required)
- * @param request.body.direction - "like" | "pass" | "superlike" (required)
- * 
- * @returns 201 - Swipe recorded successfully, includes { matched: false }
- * @returns 201 - Swipe recorded + match created, includes { matched: true, matchId: "..." }
- * @returns 400 - Missing required fields or invalid direction
- * @returns 409 - Already swiped on this item
- * @returns 500 - Database error
  */
 export async function createSwipe(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log(`Recording swipe action`);
@@ -129,53 +118,58 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
                     // Check if the other user liked any of THIS user's listings
                     // (Case: Host swipes Seeker, checking if Seeker liked Host's Listing)
 
-                    // 1. Get all listings owned by swiper (Host)
-                    const myListingQuery = {
-                        query: "SELECT c.id FROM c WHERE c.ownerId = @ownerId",
-                        parameters: [{ name: "@ownerId", value: body.swiperId }] // swiperId is Host identityId
-                    };
-                    const { resources: myListings } = await listingsContainer.items.query(myListingQuery).fetchAll();
+                    // 1. Get host's identityId to identify their listings
+                    const { resource: hostUser } = await usersContainer.item(body.swiperId, body.swiperId).read();
 
-                    if (myListings.length > 0) {
-                        const listingIds = myListings.map(l => l.id);
+                    if (hostUser && hostUser.identityId) {
+                        // 2. Get all listings owned by swiper (Host)
+                        const myListingQuery = {
+                            query: "SELECT c.id FROM c WHERE c.ownerId = @ownerId",
+                            parameters: [{ name: "@ownerId", value: hostUser.identityId }]
+                        };
+                        const { resources: myListings } = await listingsContainer.items.query(myListingQuery).fetchAll();
 
-                        // 2. Check if swiped user (Seeker) liked ANY of these listings
-                        // usage of ARRAY_CONTAINS or IN clause
-                        const idsList = listingIds.map(id => `'${id}'`).join(",");
-                        const listingSwipeQuery = `
-                            SELECT * FROM c 
-                            WHERE c.swiperId = '${body.swipedId}' 
-                            AND c.swipedType = 'listing' 
-                            AND ARRAY_CONTAINS([${idsList}], c.swipedId)
-                            AND (c.direction = 'like' OR c.direction = 'superlike')
-                        `;
+                        if (myListings.length > 0) {
+                            const listingIds = myListings.map(l => l.id);
 
-                        // Be careful with query length/parameters, but for small listing count this is fine.
-                        // Or iterate if safer.
+                            // 3. Check if swiped user (Seeker) liked ANY of these listings
+                            const idsList = listingIds.map(id => `'${id}'`).join(",");
+                            const listingSwipeQuery = `
+                                SELECT * FROM c 
+                                WHERE c.swiperId = '${body.swipedId}' 
+                                AND c.swipedType = 'listing' 
+                                AND ARRAY_CONTAINS([${idsList}], c.swipedId)
+                                AND (c.direction = 'like' OR c.direction = 'superlike')
+                            `;
 
-                        const { resources: listingSwipes } = await swipesContainer.items.query(listingSwipeQuery).fetchAll();
+                            const { resources: listingSwipes } = await swipesContainer.items.query(listingSwipeQuery).fetchAll();
 
-                        if (listingSwipes.length > 0) {
-                            // Match! Seeker liked one of Host's listings
-                            matchId = uuidv4();
-                            const matchedListingId = listingSwipes[0].swipedId;
-                            const match = {
-                                id: matchId,
-                                type: "user-listing",
-                                userIds: [body.swiperId, body.swipedId].sort(),
-                                listingId: matchedListingId,
-                                createdAt: new Date().toISOString()
-                            };
+                            if (listingSwipes.length > 0) {
+                                // Match! Seeker liked one of Host's listings
+                                matchId = uuidv4();
+                                const matchedListingId = listingSwipes[0].swipedId;
+                                const match = {
+                                    id: matchId,
+                                    type: "user-listing",
+                                    userIds: [body.swiperId, body.swipedId].sort(),
+                                    listingId: matchedListingId,
+                                    createdAt: new Date().toISOString()
+                                };
 
-                            await matchesContainer.items.create(match);
-                            matched = true;
-                            context.log(`Match created (host-listing): ${matchId}`);
+                                await matchesContainer.items.create(match);
+                                matched = true;
+                                context.log(`Match created (host-listing): ${matchId}`);
+                            }
                         }
                     }
                 }
             } else {
                 // Listing swipe: check if listing owner has liked this user
                 // First, get the listing to find its owner
+                // Note: Listing ownerId is identityId, but swipes use userId (Cosmos ID)
+                // We need to resolve the owner's cosmos ID to check swipes
+
+                // 1. Get listing
                 const listingQuery = {
                     query: "SELECT c.ownerId FROM c WHERE c.id = @listingId",
                     parameters: [{ name: "@listingId", value: body.swipedId }]
@@ -183,33 +177,44 @@ export async function createSwipe(request: HttpRequest, context: InvocationConte
                 const { resources: listings } = await listingsContainer.items.query(listingQuery).fetchAll();
 
                 if (listings.length > 0) {
-                    const ownerId = listings[0].ownerId;
+                    const ownerIdentityId = listings[0].ownerId;
 
-                    // Check if owner has liked this user
-                    const reverseQuery = {
-                        query: `SELECT * FROM c WHERE c.swiperId = @ownerId AND c.swipedId = @swiperId AND c.swipedType = 'user' AND (c.direction = 'like' OR c.direction = 'superlike')`,
-                        parameters: [
-                            { name: "@ownerId", value: ownerId },
-                            { name: "@swiperId", value: body.swiperId }
-                        ]
+                    // 2. Resolve owner's Cosmos ID from identityId
+                    const userQuery = {
+                        query: "SELECT c.id FROM c WHERE c.identityId = @identityId",
+                        parameters: [{ name: "@identityId", value: ownerIdentityId }]
                     };
+                    const { resources: owners } = await usersContainer.items.query(userQuery).fetchAll();
 
-                    const { resources: reverseSwipes } = await swipesContainer.items.query(reverseQuery).fetchAll();
+                    if (owners.length > 0) {
+                        const ownerId = owners[0].id;
 
-                    if (reverseSwipes.length > 0) {
-                        // Match! The looking user liked the listing and the owner liked the user
-                        matchId = uuidv4();
-                        const match = {
-                            id: matchId,
-                            type: "user-listing",
-                            userIds: [body.swiperId, ownerId].sort(),
-                            listingId: body.swipedId,
-                            createdAt: new Date().toISOString()
+                        // 3. Check if owner has liked this user
+                        const reverseQuery = {
+                            query: `SELECT * FROM c WHERE c.swiperId = @ownerId AND c.swipedId = @swiperId AND c.swipedType = 'user' AND (c.direction = 'like' OR c.direction = 'superlike')`,
+                            parameters: [
+                                { name: "@ownerId", value: ownerId },
+                                { name: "@swiperId", value: body.swiperId }
+                            ]
                         };
 
-                        await matchesContainer.items.create(match);
-                        matched = true;
-                        context.log(`Match created (user-listing): ${matchId}`);
+                        const { resources: reverseSwipes } = await swipesContainer.items.query(reverseQuery).fetchAll();
+
+                        if (reverseSwipes.length > 0) {
+                            // Match! The looking user liked the listing and the owner liked the user
+                            matchId = uuidv4();
+                            const match = {
+                                id: matchId,
+                                type: "user-listing",
+                                userIds: [body.swiperId, ownerId].sort(),
+                                listingId: body.swipedId,
+                                createdAt: new Date().toISOString()
+                            };
+
+                            await matchesContainer.items.create(match);
+                            matched = true;
+                            context.log(`Match created (user-listing): ${matchId}`);
+                        }
                     }
                 }
             }
@@ -254,4 +259,3 @@ app.http('create-swipe', {
     route: 'swipes',
     handler: createSwipe
 });
-
