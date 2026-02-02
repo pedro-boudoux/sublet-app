@@ -6,7 +6,7 @@
 ![Project Banner](sublety_banner.png)
 
 ## 💡 The Problem
-Finding a sublet—or someone to fill your room—is a nightmare of unformatted Facebook Marketplace posts and sketchy DMs. Most platforms filter by price and location, but ignore the friction points of living with someone: **Lifestyle Compatibility**.
+Finding a sublet, or someone to fill your room, is a nightmare of unformatted Facebook Marketplace posts and sketchy DMs. Most platforms filter by price and location, but ignore the friction points of living with someone: **Lifestyle Compatibility**.
 
 **Sublety** solves this with two innovations:
 1.  **Swipe-to-Match:** A familiar interface to find roommates who match your needs (Pets? Smoking? Accessibility?).
@@ -120,8 +120,8 @@ We solve the "Form Fatigue" problem using Generative AI.
 4.  **Storage:** This is directly injected into **Cosmos DB**, instantly updating the user's filter preferences.
 
 ## 👥 Contributors
-* **[Name]** - Full Stack
-* **[Name]** - AI Integration
-* **[Name]** - Design & Frontend
+* **[Pedro Boudoux]** - Full Stack
+* **[Veronica Rodriguez Noguera]** - AI Integration
+* **[Gabriel Crisafi & Taylor Wymes]** - Design, Assets & Frontend
 
 
