@@ -130,4 +130,9 @@ We solve the "Form Fatigue" problem using Generative AI.
 * **[Veronica Rodriguez Noguera]** - AI Integration
 * **[Gabriel Crisafi & Taylor Wymes]** - Design, Assets & Frontend
 
+## Devpost
+View our Hackhive submission of Sublety at the link below!<br>
+<a href="https://devpost.com/software/sublety">Sublety Devpost</a>
+
+
 
