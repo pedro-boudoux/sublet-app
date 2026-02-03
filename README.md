@@ -56,7 +56,7 @@ nix-shell
 Inside the `nix-shell`:
 
 ```bash
-npm install
+bun install
 ```
 
 ### 3. Configure Environment
@@ -72,7 +72,10 @@ ELEVENLABS_API_KEY=...
 We use `concurrently` to run the Tauri frontend and the Azure backend emulator simultaneously:
 
 ```bash
-npm run dev
+cd backend
+bun run build
+cd ../frontend
+bun tauri dev
 ```
 
 * **Frontend:** `http://localhost:5173`
