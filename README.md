@@ -56,6 +56,9 @@ nix-shell
 Inside the `nix-shell`:
 
 ```bash
+cd backend
+bun install
+cd ../frontend
 bun install
 ```
 
