@@ -1,5 +1,4 @@
 # 🏠 Sublety
-
 > **Tinder for Sublets.** Match by lifestyle, not just price.
 > Powered by **Tauri**, **Azure**, **Gemini**, and **ElevenLabs**.
 
